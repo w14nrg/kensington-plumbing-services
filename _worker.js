@@ -26,16 +26,46 @@ function findJob(code){
 
 function calculateEstimate(job,state){
   let min=job.min,max=job.max;
-  let confidence="Medium";
-  if(state.matchConfidence==="high")confidence="High";
-  if(state.access==="awkward"){min+=35;max+=100;confidence="Medium"}
-  if(state.access==="concealed"){min+=90;max+=260;confidence="Medium"}
+  if(state.access==="awkward"){min+=35;max+=100}
+  if(state.access==="concealed"){min+=90;max+=260}
   const qty=Math.max(1,Math.min(10,Number(state.quantity)||1));
   if(qty>1){min+=Math.round(job.min*0.55*(qty-1));max+=Math.round(job.max*0.65*(qty-1))}
   if(state.outOfHours==="yes"){min+=50;max+=90}
   min=Math.max(75,Math.round(min/5)*5);
   max=Math.max(min,Math.round(max/5)*5);
-  return{min,max,confidence};
+  return{min,max};
+}
+
+function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+function estimateConfidence(state,modelScore=0){
+  let heuristic=state.matchConfidence==="high"?52:state.matchConfidence==="medium"?38:24;
+  if(clean(state.symptomDetail,300).length>=8)heuristic+=12;
+  if(clean(state.fixtureDetail,300).length>=4)heuristic+=8;
+  if(clean(state.locationDetail,300).length>=4)heuristic+=6;
+  if(clean(state.causeHint,300).length>=4)heuristic+=7;
+  if(state.access&&state.access!=="unknown")heuristic+=7;
+  if(clean(state.problemSummary,800).length>=30)heuristic+=6;
+  if((Number(state.turnCount)||0)>=2)heuristic+=4;
+  if((Number(state.turnCount)||0)>=3)heuristic+=4;
+  const model=clamp(Number(modelScore)||heuristic,10,95);
+  return clamp(Math.round(heuristic*.45+model*.55),15,95);
+}
+
+function progressiveEstimate(job,state,confidenceScore){
+  const base=calculateEstimate(job,state);
+  const centre=(base.min+base.max)/2;
+  const baseWidth=Math.max(30,base.max-base.min);
+  let factor=1.7;
+  if(confidenceScore>=35)factor=1.45;
+  if(confidenceScore>=50)factor=1.22;
+  if(confidenceScore>=65)factor=1.0;
+  if(confidenceScore>=78)factor=.82;
+  if(confidenceScore>=90)factor=.68;
+  const width=Math.max(35,baseWidth*factor);
+  let min=Math.max(75,Math.round((centre-width/2)/5)*5);
+  let max=Math.max(min+20,Math.round((centre+width/2)/5)*5);
+  const confidence=confidenceScore>=80?"High":confidenceScore>=55?"Medium":"Low";
+  return{min,max,confidence,confidenceScore};
 }
 
 function likelyPostcode(text){
@@ -53,16 +83,35 @@ function fallbackTurn(message,history,state){
   next.postcode=next.postcode||likelyPostcode(message);
 
   const lower=message.toLowerCase();
-  if(/behind|boxed|boxing|tile|under floor|concealed|in wall/.test(lower))next.access="concealed";
+  if(/behind|boxed|boxing|concealed cistern|back to wall|under floor|concealed|in wall/.test(lower))next.access="concealed";
   else if(/tight|awkward|hard to reach/.test(lower))next.access="awkward";
   else if(/visible|easy access|under sink|exposed/.test(lower))next.access="easy";
 
   if(/smell gas|gas leak|gas smell/.test(lower)){
     return{reply:"Please leave the area, avoid operating electrical switches and call the National Gas Emergency Service on 0800 111 999.",state:next,safety:"Suspected gas leak: leave the area and call 0800 111 999.",ready:false};
   }
-  if(!next.postcode)return{reply:"What’s the postcode for the job?",state:next,ready:false,quickReplies:[]};
-  if(!next.access||next.access==="unknown")return{reply:"And is the area I’d need to get to visible and easy to reach, tight/awkward, or hidden behind tiles, boxing or flooring?",state:next,ready:false,quickReplies:["Visible and easy to reach","Tight or awkward","Hidden behind tiles or boxing"]};
-  return{reply:"Thanks — that gives me enough to put an estimate together.",state:next,ready:true,quickReplies:[]};
+
+  // Sensible defaults for normally exposed fixtures. Only ask about access when it can genuinely change the job.
+  if(/toilet|cistern|wc/.test((best.name+" "+full).toLowerCase()) && !next.access){
+    next.access=/concealed|back to wall|boxed|boxing/.test(lower)?"concealed":"easy";
+    if(!next.faultDetail){
+      next.faultDetail=true;
+      return{
+        reply:"Got it. When you say it keeps filling after you flush, do you mean the cistern never stops filling, or it just takes a very long time to refill?",
+        state:next,ready:false,
+        quickReplies:["It never stops filling","It takes a long time to refill"]
+      };
+    }
+  }
+
+  if(!next.postcode)return{reply:"Thanks. What’s the postcode for the property?",state:next,ready:false,quickReplies:[]};
+
+  if((/leak|pipe|shower|bath|drain|waste/.test((best.category+" "+best.name).toLowerCase())) && (!next.access||next.access==="unknown")){
+    return{reply:"Is the part you can see easy to get to, or is the problem hidden behind tiles, boxing, a wall or floor?",state:next,ready:false,quickReplies:["Easy to get to","Hidden behind tiles or boxing"]};
+  }
+
+  if(!next.access||next.access==="unknown")next.access="easy";
+  return{reply:"Thanks — that gives me enough to put an initial estimate together.",state:next,ready:true,quickReplies:[]};
 }
 
 async function openAITurn(env,message,history,state,candidates){
@@ -75,6 +124,7 @@ async function openAITurn(env,message,history,state,candidates){
       reply:{type:"string"},
       selected_job_code:{type:"string"},
       match_confidence:{type:"string",enum:["high","medium","low"]},
+      information_confidence:{type:"integer",minimum:0,maximum:100},
       ready_to_estimate:{type:"boolean"},
       safety:{type:"string"},
       quick_replies:{type:"array",items:{type:"string"},maxItems:4},
@@ -84,33 +134,47 @@ async function openAITurn(env,message,history,state,candidates){
         quantity:{type:"integer",minimum:1,maximum:10},
         active_leak:{type:"string",enum:["yes","no","unknown"]},
         out_of_hours:{type:"string",enum:["yes","no","unknown"]},
-        problem_summary:{type:"string"}
-      },required:["postcode","access","quantity","active_leak","out_of_hours","problem_summary"]}
+        problem_summary:{type:"string"},
+        symptom_detail:{type:"string"},
+        fixture_detail:{type:"string"},
+        location_detail:{type:"string"},
+        cause_hint:{type:"string"}
+      },required:["postcode","access","quantity","active_leak","out_of_hours","problem_summary","symptom_detail","fixture_detail","location_detail","cause_hint"]}
     },
-    required:["reply","selected_job_code","match_confidence","ready_to_estimate","safety","quick_replies","extracted"]
+    required:["reply","selected_job_code","match_confidence","information_confidence","ready_to_estimate","safety","quick_replies","extracted"]
   };
 
   const system=`You are Ken, the friendly plumbing assistant for Kensington Plumbing Services in West London.
 
-You are having ONE continuous natural conversation with a customer. Never mention AI, a catalogue, a database, an algorithm, a pricing engine, a model, or internal job codes.
+You are having ONE continuous, natural conversation with a customer. Talk like an experienced local plumber, not a questionnaire.
 
-Your goal:
-1. Understand the plumbing/heating/small-drainage problem.
-2. Ask only ONE useful follow-up question at a time, relevant to that exact problem.
-3. Extract useful facts from everything the customer has already said.
-4. Once the likely job is sufficiently clear, access is known, and a postcode is known, set ready_to_estimate=true.
-5. Keep replies concise and friendly, like an experienced local plumber chatting to a customer.
+Your job in this conversation is ONLY to understand the plumbing/heating/small-drainage problem well enough to create a useful estimated repair range.
 
-Important:
-- Do not invent a price. The server adds the estimate separately.
-- Do not promise an exact diagnosis from text alone.
-- For an active water leak, advise safe isolation if appropriate.
-- For suspected gas leak/smell, tell them to leave the area, avoid electrical switches and call National Gas Emergency Service 0800 111 999. Set safety and do not estimate.
-- Internal gas-appliance work must be handled by an appropriately qualified engineer.
-- If the customer gives a postcode, extract it.
-- Access values: easy = visible/open/under sink/exposed; awkward = tight/restricted; concealed = behind tiles/boxing/wall/floor; unknown if not known.
-- quantity defaults to 1.
-- You may choose only one selected_job_code from the candidate list below. If none fits, use unknown_plumbing.
+Rules:
+1. Read everything the customer has already said. Never ask them to repeat information they already gave you.
+2. Ask only ONE genuinely useful follow-up question at a time, specific to their exact problem.
+3. Do NOT ask for their name, phone number, address or postcode. The website collects customer details after the estimate. If they volunteer a postcode, extract it, but do not ask for it.
+4. Do NOT ask about access unless access can materially change the price for that exact problem. Normal visible toilets, taps and radiators should be assumed easy access unless the customer says they are concealed, boxed in, back-to-wall or difficult to reach.
+5. If the customer says “I don't know”, “not sure” or cannot answer a technical question, accept that naturally. Do not keep asking the same thing. Continue with a wider, lower-confidence estimate.
+6. The more specific useful information you obtain, the higher information_confidence should become. More confidence lets the server narrow the price range. Missing/unknown information must keep confidence lower and the range wider.
+7. information_confidence should normally start around 20-40 after a vague first message, move to 45-70 after one or two useful answers, and reach 75-95 only when the likely fault and scope are genuinely quite clear.
+8. Set ready_to_estimate=true when you can identify a sensible likely repair route. This does NOT mean certainty. After roughly 1-3 useful questions, you should normally be able to give an estimate even if some facts remain unknown.
+9. Keep the conversation moving. Do not interrogate the customer just to raise confidence.
+10. Do not invent prices. The server calculates all prices separately.
+11. Do not claim a certain diagnosis from chat alone. Say “likely”, “sounds like”, or similar.
+12. If there is an active water leak, give concise safe isolation advice when appropriate.
+13. For suspected gas leak/smell: tell them to leave the area, avoid electrical switches and call National Gas Emergency Service 0800 111 999. Set safety and do not estimate.
+14. Internal gas-appliance work requires an appropriately qualified engineer.
+15. selected_job_code must be one code from the candidate list. Use unknown_plumbing only if none reasonably fits.
+
+Extract and continuously refine:
+- symptom_detail: what is actually happening
+- fixture_detail: relevant fixture/type/brand/model if known
+- location_detail: where the problem is
+- cause_hint: likely component or cause only if supported
+- access: easy, awkward, concealed, unknown
+- quantity
+- problem_summary: concise running summary
 
 Likely job candidates:
 ${candidateText}
@@ -120,7 +184,7 @@ ${JSON.stringify(state)}`;
 
   const input=[
     {role:"system",content:system},
-    ...history.slice(-10).map(x=>({role:x.role==="assistant"?"assistant":"user",content:clean(x.content,1200)})),
+    ...history.slice(-12).map(x=>({role:x.role==="assistant"?"assistant":"user",content:clean(x.content,1200)})),
     {role:"user",content:clean(message,1200)}
   ];
 
@@ -134,10 +198,26 @@ ${JSON.stringify(state)}`;
       text:{format:{type:"json_schema",name:"ken_turn",strict:true,schema}}
     })
   });
-  if(!response.ok)return null;
+  if(!response.ok){
+    const err=await response.text().catch(()=>"");
+    console.error("OpenAI Responses API error",response.status,err.slice(0,1000));
+    return null;
+  }
   const data=await response.json();
-  const raw=data.output_text||"";
-  try{return JSON.parse(raw)}catch{return null}
+  const raw=(data.output||[])
+    .flatMap(item=>Array.isArray(item.content)?item.content:[])
+    .filter(part=>part&&part.type==="output_text"&&typeof part.text==="string")
+    .map(part=>part.text)
+    .join("")
+    .trim();
+  if(!raw){
+    console.error("OpenAI returned no output_text content",JSON.stringify(data).slice(0,1600));
+    return null;
+  }
+  try{return JSON.parse(raw)}catch(error){
+    console.error("Could not parse Ken structured output",raw.slice(0,1200));
+    return null;
+  }
 }
 
 async function saveMessage(env,sessionId,role,content){
@@ -158,7 +238,7 @@ async function handleKen(request,env){
 
   const fullText=[...history.map(x=>x.content||""),message].join(" ");
   const ranked=scoreJobs(fullText);
-  const candidates=ranked.filter(x=>x.score>0).slice(0,12);
+  const candidates=ranked.filter(x=>x.score>0).slice(0,15);
   if(!candidates.find(x=>x.job.code==="unknown_plumbing")) candidates.push({job:findJob("unknown_plumbing"),score:0});
 
   let turn=await openAITurn(env,message,history,incomingState,candidates);
@@ -167,6 +247,7 @@ async function handleKen(request,env){
   const extracted=turn.extracted||{};
   const state={
     ...incomingState,
+    turnCount:(Number(incomingState.turnCount)||0)+1,
     jobCode:turn.selected_job_code||turn.state?.jobCode||incomingState.jobCode||"unknown_plumbing",
     matchConfidence:turn.match_confidence||turn.state?.matchConfidence||incomingState.matchConfidence||"low",
     postcode:extracted.postcode||turn.state?.postcode||incomingState.postcode||likelyPostcode(message)||"",
@@ -174,51 +255,60 @@ async function handleKen(request,env){
     quantity:extracted.quantity||turn.state?.quantity||incomingState.quantity||1,
     activeLeak:extracted.active_leak||turn.state?.activeLeak||incomingState.activeLeak||"unknown",
     outOfHours:extracted.out_of_hours||turn.state?.outOfHours||incomingState.outOfHours||"unknown",
-    problemSummary:extracted.problem_summary||turn.state?.problemSummary||incomingState.problemSummary||""
+    problemSummary:extracted.problem_summary||turn.state?.problemSummary||incomingState.problemSummary||"",
+    symptomDetail:extracted.symptom_detail||incomingState.symptomDetail||"",
+    fixtureDetail:extracted.fixture_detail||incomingState.fixtureDetail||"",
+    locationDetail:extracted.location_detail||incomingState.locationDetail||"",
+    causeHint:extracted.cause_hint||incomingState.causeHint||""
   };
 
-  // Never estimate gas emergency route.
   if(state.jobCode==="gas_smell"){
     const reply=turn.reply||"Please leave the area and call the National Gas Emergency Service on 0800 111 999.";
     await saveMessage(env,sessionId,"assistant",reply);
-    return json({sessionId,reply,state,safety:turn.safety||"Suspected gas leak: leave the area, avoid electrical switches and call 0800 111 999.",progress:20,quickReplies:[]});
+    return json({sessionId,reply,state,safety:turn.safety||"Suspected gas leak: leave the area, avoid electrical switches and call 0800 111 999.",progress:15,quickReplies:[]});
   }
 
-  // Server decides whether the minimum estimate facts are actually present.
-  const enough=state.jobCode&&state.jobCode!=="unknown_plumbing"&&state.postcode&&state.access&&state.access!=="unknown";
-  const ready=Boolean(turn.ready_to_estimate||turn.ready) && enough;
-
   let estimate=null;
-  if(ready){
+  const jobKnown=state.jobCode&&state.jobCode!=="unknown_plumbing";
+  if(jobKnown){
+    const confidenceScore=estimateConfidence(state,turn.information_confidence);
+    state.confidenceScore=confidenceScore;
+    const calc=progressiveEstimate(findJob(state.jobCode),state,confidenceScore);
+    const canBook=Boolean(turn.ready_to_estimate||turn.ready||state.turnCount>=3) && confidenceScore>=35;
+    let estimateId=incomingState.estimateId||"";
+    if(canBook&&env.DB){
+      const job=findJob(state.jobCode);
+      if(estimateId){
+        await env.DB.prepare(`UPDATE estimates SET job_code=?,job_name=?,estimate_min=?,estimate_max=?,confidence=?,postcode=?,access_level=?,problem_summary=? WHERE id=?`)
+          .bind(job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note,estimateId).run();
+      }else{
+        estimateId=uid("est");
+        await env.DB.prepare(`INSERT INTO estimates
+          (id,session_id,job_code,job_name,estimate_min,estimate_max,confidence,postcode,access_level,problem_summary)
+          VALUES (?,?,?,?,?,?,?,?,?,?)`)
+          .bind(estimateId,sessionId,job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note).run();
+      }
+      state.estimateId=estimateId;
+    }
     const job=findJob(state.jobCode);
-    const calc=calculateEstimate(job,state);
-    const estimateId=uid("est");
     estimate={
-      estimateId,
+      estimateId:estimateId||null,
       jobCode:job.code,
       jobName:job.name,
       min:calc.min,
       max:calc.max,
       confidence:calc.confidence,
+      confidenceScore:calc.confidenceScore,
+      canBook,
+      provisional:!canBook,
       summary:state.problemSummary||job.note
     };
-    if(env.DB){
-      await env.DB.prepare(`INSERT INTO estimates
-        (id,session_id,job_code,job_name,estimate_min,estimate_max,confidence,postcode,access_level,problem_summary)
-        VALUES (?,?,?,?,?,?,?,?,?,?)`)
-        .bind(estimateId,sessionId,job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode,state.access,state.problemSummary||job.note).run();
-    }
   }
 
   const reply=turn.reply||"Thanks — tell me a little more about what’s happening.";
   await saveMessage(env,sessionId,"assistant",reply);
 
-  let progress=30;
-  if(state.jobCode&&state.jobCode!=="unknown_plumbing")progress=48;
-  if(state.access&&state.access!=="unknown")progress=68;
-  if(state.postcode)progress=82;
-  if(estimate)progress=100;
-
+  const progress=estimate?estimate.confidenceScore:20;
   return json({
     sessionId,
     reply,
@@ -233,14 +323,12 @@ async function handleKen(request,env){
 async function handleLead(request,env){
   const data=await request.json().catch(()=>({}));
   const name=clean(data.name,120),phone=clean(data.phone,60),email=clean(data.email,160);
-  if(!name||!phone)return json({error:"Please enter your name and mobile number."},400);
+  const address=clean(data.address,500),postcode=clean(data.postcode,20).toUpperCase();
+  if(!name||!phone||!address||!postcode)return json({error:"Please enter your name, mobile number, full address and postcode."},400);
   const leadId=uid("lead");
   if(env.DB){
-    await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode) VALUES (?,?,?,?,?,?,?)")
-      .bind(leadId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,name,phone,email||null,clean(data.postcode,20)||null).run();
-    if(clean(data.reservationId,120)){
-      await env.DB.prepare("UPDATE reservations SET lead_id=? WHERE id=?").bind(leadId,clean(data.reservationId,120)).run();
-    }
+    await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode,address) VALUES (?,?,?,?,?,?,?,?)")
+      .bind(leadId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,name,phone,email||null,postcode,address).run();
   }
   return json({leadId});
 }
@@ -266,7 +354,7 @@ function candidateSlots(days=21){
     const date=dt.toISOString().slice(0,10);
     const dow=dt.getUTCDay();
     if(dow===0||dow===6)continue;
-    for(const [start,end] of [["08:00","10:00"],["10:00","12:00"],["12:00","14:00"],["14:00","16:00"],["16:00","17:00"]]){
+    for(const [start,end] of [["08:00","11:00"],["11:00","14:00"],["14:00","17:00"]]){
       slots.push(slotDefinition(date,start,end));
     }
   }
@@ -295,9 +383,9 @@ async function handleReserveSlot(request,env){
   const expiresAt=sqlTimestamp(new Date(Date.now()+35*60*1000));
   try{
     await env.DB.prepare(`INSERT INTO reservations
-      (id,session_id,estimate_id,slot_key,appointment_date,start_time,end_time,status,expires_at)
-      VALUES (?,?,?,?,?,?,?,?,?)`)
-      .bind(reservationId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,slot.slotKey,slot.date,slot.start,slot.end,"HELD",expiresAt).run();
+      (id,session_id,estimate_id,lead_id,slot_key,appointment_date,start_time,end_time,status,expires_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .bind(reservationId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,clean(data.leadId,100)||null,slot.slotKey,slot.date,slot.start,slot.end,"HELD",expiresAt).run();
   }catch{
     return json({error:"That appointment has just been taken. Please choose another."},409);
   }
@@ -442,7 +530,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",jobs:JOBS.length});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }
