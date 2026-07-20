@@ -4,90 +4,134 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ken | Plumbing Estimator & Online Booking | Kensington Plumbing Services</title>
-  <meta name="description" content="Chat with Ken from Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair price, see available appointments and book online.">
-  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="description" content="Chat with Ken from Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair range and book a local plumber online.">
   <link rel="canonical" href="https://www.kensington.biz/ken.html">
   <link rel="stylesheet" href="/ken.css">
 </head>
-<body class="ken-premium-page">
-<header class="kps-topbar">
-  <div class="kps-topbar-inner">
-    <a class="kps-brand" href="/">
-      <span class="kps-logo">KPS</span>
-      <span class="kps-brand-copy"><strong>Kensington Plumbing Services</strong><small>WEST LONDON</small></span>
-    </a>
-    <nav class="kps-main-nav">
-      <a href="/">Home</a><a href="/service.html">Services</a><a href="/areas.html">Areas</a><a href="/about.html">About</a><a href="/contact.html">Contact</a>
-    </nav>
-    <a class="kps-phone" href="tel:+442073713333">☎ Call 020 7371 3333</a>
+<body class="ken-page">
+  <div class="site-topline">
+    <div class="site-width">
+      <span>Local plumber based at 33 Gunterstone Road, London W14 9BP</span>
+      <span>info@kensington.biz&nbsp;&nbsp;·&nbsp;&nbsp;Plumbing experience since 1998</span>
+    </div>
   </div>
-</header>
 
-<main>
-  <section class="ken-hero-grid">
-    <section class="ken-world-panel">
-      <div class="ken-world-copy">
-        <div class="ken-eyebrow">YOUR KENSINGTON PLUMBING COMPANION</div>
-        <h1>KEN</h1>
-        <p>Ken is your interactive 3D plumbing assistant. Talk through the problem, get an estimated repair price and book online.</p>
+  <header class="site-header">
+    <div class="site-width site-header-inner">
+      <a class="site-brand" href="/">
+        <span class="brand-box">KPS</span>
+        <span class="brand-copy">
+          <strong>Kensington Plumbing</strong>
+          <small>SERVICES · WEST LONDON</small>
+        </span>
+      </a>
+      <nav class="site-nav">
+        <a href="/">Home</a>
+        <a href="/service.html">Services</a>
+        <a href="/areas.html">Areas</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <a class="site-call" href="tel:+442073713333">Call 020 7371 3333</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="ken-intro site-width">
+      <div class="ken-eyebrow"><span></span> YOUR KENSINGTON PLUMBING COMPANION</div>
+      <div class="ken-intro-grid">
+        <div>
+          <h1>Meet Ken.</h1>
+          <h2>Chat. Diagnose. Estimate. Book.</h2>
+          <p>Tell Ken what’s gone wrong in your own words. He’ll talk the problem through with you, work out the likely job, give you an estimated price range and help you book a plumber.</p>
+        </div>
+        <div class="intro-badges">
+          <span>✓ Local W14 plumbing</span>
+          <span>✓ 235+ job routes</span>
+          <span>✓ £75 attendance & diagnosis</span>
+          <span>✓ Online booking</span>
+        </div>
       </div>
-
-      <div class="ken-world-stage" id="ken-world-stage">
-        <div id="ken-main-3d" class="ken-main-3d" aria-label="Interactive 3D Ken"></div>
-        <button class="ken-fullscreen-btn" id="ken-fullscreen" type="button">⛶ Fullscreen</button>
-
-        <aside class="ken-controls-card">
-          <div class="ken-controls-title">VIEW CONTROLS</div>
-          <div class="ken-control-row"><span>☝</span><b>Drag</b><small>Rotate Ken</small></div>
-          <div class="ken-control-row"><span>🖱</span><b>Scroll</b><small>Zoom in / out</small></div>
-          <div class="ken-control-row"><span>↔</span><b>Right drag</b><small>Pan view</small></div>
-          <div class="ken-controls-title action-title">ACTIONS</div>
-          <button data-ken-3d-action="wave" type="button">👋 Wave</button>
-          <button data-ken-3d-action="thumbs" type="button">👍 Thumbs up</button>
-          <button data-ken-3d-action="wrench" type="button">🔧 Pick up wrench</button>
-          <button data-ken-3d-action="toilet" type="button">🚽 Inspect toilet</button>
-          <button data-ken-3d-action="radiator" type="button">♨ Check radiator</button>
-          <button data-ken-3d-action="reset" type="button">↺ Back to centre</button>
-        </aside>
-      </div>
-
-      <div class="ken-view-presets">
-        <button data-ken-view="front" class="active" type="button">Front</button>
-        <button data-ken-view="left" type="button">Left</button>
-        <button data-ken-view="back" type="button">Back</button>
-        <button data-ken-view="right" type="button">Right</button>
-        <button data-ken-view="close" type="button">Close-up</button>
-      </div>
-      <div class="ken-view-help">Drag to rotate · Scroll to zoom · Move around the room · Use the action buttons to see Ken work</div>
     </section>
 
-    <section class="ken-chat-panel" id="ken-page-app" aria-label="Chat with Ken"></section>
-  </section>
+    <section class="ken-workspace site-width">
+      <aside class="ken-visual-panel">
+        <div class="visual-top">
+          <div>
+            <span class="visual-kicker">INTERACTIVE KEN</span>
+            <h3>Your 3D plumbing companion</h3>
+          </div>
+          <button id="ken-fullscreen" class="ghost-button" type="button">⛶ Fullscreen</button>
+        </div>
 
-  <section class="ken-help-strip">
-    <div class="ken-help-heading">WHAT KEN CAN HELP WITH</div>
-    <div class="ken-help-grid">
-      <button data-ken-prompt="I have a leak or pipework problem"><span>💧</span><b>Leaks & Pipework</b></button>
-      <button data-ken-prompt="My toilet has a problem"><span>🚽</span><b>Toilets</b></button>
-      <button data-ken-prompt="I have a tap or mixer problem"><span>🚰</span><b>Taps & Mixers</b></button>
-      <button data-ken-prompt="I have a shower or bath problem"><span>🚿</span><b>Showers & Baths</b></button>
-      <button data-ken-prompt="I have a radiator or heating problem"><span>♨</span><b>Radiators & Heating</b></button>
-      <button data-ken-prompt="I have a tank or cylinder problem"><span>▣</span><b>Tanks & Cylinders</b></button>
-      <button data-ken-prompt="I have a pump problem"><span>⚙</span><b>Pumps</b></button>
-      <button data-ken-prompt="I have a blocked sink, waste pipe or drain"><span>↘</span><b>Blockages</b></button>
-      <button data-ken-prompt="I need help with a plumbing appliance"><span>▤</span><b>Appliances</b></button>
-      <button data-ken-prompt="I have another plumbing problem"><span>•••</span><b>More…</b></button>
+        <div class="ken-stage" id="ken-stage">
+          <div id="ken-large-3d" class="ken-large-3d" aria-label="Interactive 3D Ken"></div>
+
+          <div class="viewer-help">
+            <span>Drag to rotate</span>
+            <span>Scroll to zoom</span>
+            <span>Right-drag to pan</span>
+          </div>
+
+          <div class="viewer-controls">
+            <div class="control-title">KEN ACTIONS</div>
+            <button type="button" data-ken-action="wave">👋 Wave</button>
+            <button type="button" data-ken-action="thumbs">👍 Thumbs up</button>
+            <button type="button" data-ken-action="wrench">🔧 Pick up wrench</button>
+            <button type="button" data-ken-action="toilet">🚽 Inspect toilet</button>
+            <button type="button" data-ken-action="radiator">♨ Check radiator</button>
+            <button type="button" data-ken-action="home">↩ Back to centre</button>
+          </div>
+        </div>
+
+        <div class="angle-buttons">
+          <button type="button" data-ken-view="front" class="active">Front</button>
+          <button type="button" data-ken-view="left">Left</button>
+          <button type="button" data-ken-view="back">Back</button>
+          <button type="button" data-ken-view="right">Right</button>
+          <button type="button" data-ken-view="close">Close-up</button>
+        </div>
+      </aside>
+
+      <section class="ken-chat-card" id="ken-page-app" aria-label="Ken plumbing estimator"></section>
+    </section>
+
+    <section class="ken-categories site-width">
+      <div class="section-heading">
+        <span>WHAT KEN CAN HELP WITH</span>
+        <h2>Start with the problem.</h2>
+        <p>You don’t need to know what the part is called. Choose a common issue or just type what you can see.</p>
+      </div>
+      <div class="category-grid">
+        <button data-ken-prompt="I have a leak or pipework problem"><span>💧</span><b>Leaks & Pipework</b><small>Leaks, bursts, valves and pressure</small></button>
+        <button data-ken-prompt="My toilet has a problem"><span>🚽</span><b>Toilets</b><small>Running, filling, flushing or blocked</small></button>
+        <button data-ken-prompt="I have a tap or mixer problem"><span>🚰</span><b>Taps & Mixers</b><small>Drips, leaks and replacements</small></button>
+        <button data-ken-prompt="I have a shower or bath problem"><span>🚿</span><b>Showers & Baths</b><small>Valves, pressure, pumps and wastes</small></button>
+        <button data-ken-prompt="I have a radiator or heating problem"><span>♨</span><b>Radiators & Heating</b><small>Cold radiators, valves and circulation</small></button>
+        <button data-ken-prompt="I have a water tank, cylinder or pump problem"><span>▣</span><b>Tanks, Cylinders & Pumps</b><small>Overflows, hot water and pumps</small></button>
+        <button data-ken-prompt="I have a blocked sink, waste or drain"><span>↘</span><b>Blockages</b><small>Sinks, wastes, gullies and drains</small></button>
+        <button data-ken-prompt="I need help with a plumbing appliance"><span>▤</span><b>Appliances</b><small>Washing machines and dishwashers</small></button>
+      </div>
+    </section>
+
+    <section class="booking-strip site-width">
+      <div><span>£75</span><p><b>Attendance & diagnosis</b><small>Deducted from the final repair price when we carry out the work</small></p></div>
+      <div><span>✓</span><p><b>Clear estimate first</b><small>Know the likely range before booking</small></p></div>
+      <div><span>📅</span><p><b>Choose an appointment</b><small>Live availability once booking is connected</small></p></div>
+      <div><span>🔒</span><p><b>Secure SumUp payment</b><small>£75 confirms the appointment</small></p></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-width footer-inner">
+      <div><strong>Kensington Plumbing Services</strong><span>33 Gunterstone Road, London W14 9BP</span></div>
+      <div><a href="tel:+442073713333">020 7371 3333</a><a href="mailto:info@kensington.biz">info@kensington.biz</a></div>
     </div>
-  </section>
+  </footer>
 
-  <section class="ken-trust-strip">
-    <div><span>£</span><p><b>£75 Attendance & Diagnosis</b><small>Deducted from the final repair price</small></p></div>
-    <div><span>📅</span><p><b>Real Appointment Slots</b><small>Choose a time that is genuinely available</small></p></div>
-    <div><span>🛡</span><p><b>Price Before Work</b><small>Exact repair price confirmed on site</small></p></div>
-    <div><span>✓</span><p><b>Secure SumUp Payment</b><small>£75 payment confirms your booking</small></p></div>
-  </section>
-</main>
-
-<script type="module" src="/ken.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="/ken-3d.js" defer></script>
+  <script src="/ken.js" defer></script>
 </body>
 </html>
