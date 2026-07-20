@@ -424,7 +424,7 @@ async function serveAssetWithKen(request,env){
     html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css"></head>');
   }
   if(!html.includes("/ken.js")){
-    html=html.replace(/<\/body>/i,'<script src="/ken.js" defer></script></body>');
+    html=html.replace(/<\/body>/i,'<script type="module" src="/ken.js"></script></body>');
   }
   const headers=new Headers(response.headers);
   headers.delete("content-length");
@@ -441,7 +441,6 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/lead")return handleLead(request,env);
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
-      if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
       if(url.pathname==="/api/health")return json({ok:true,service:"Ken",jobs:JOBS.length});
       if(url.pathname==="/ken")return Response.redirect(new URL("/ken.html",request.url).toString(),302);
       if(url.pathname==="/ken-payment-return"){
