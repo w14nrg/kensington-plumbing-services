@@ -3,9 +3,19 @@
   "name": "kensington-plumbing-services",
   "main": "_worker.js",
   "compatibility_date": "2026-07-20",
+  "vars": {
+    "OPENAI_MODEL": "gpt-5"
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": true
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kensington-ken",
+      "database_id": "c88e77cc-1ec2-4ca5-b90a-d5b938f0c615"
+    }
+  ]
 }
