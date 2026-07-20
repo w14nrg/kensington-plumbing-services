@@ -37,59 +37,25 @@
   </header>
 
   <main>
-    <section class="ken-intro site-width">
-      <div class="ken-eyebrow"><span></span> YOUR KENSINGTON PLUMBING COMPANION</div>
-      <div class="ken-intro-grid">
-        <div>
-          <h1>Meet Ken.</h1>
-          <h2>Chat. Diagnose. Estimate. Book.</h2>
-          <p>Tell Ken what’s gone wrong in your own words. He’ll talk the problem through with you, work out the likely job, give you an estimated price range and help you book a plumber.</p>
-        </div>
-        <div class="intro-badges">
-          <span>✓ Local W14 plumbing</span>
-          <span>✓ 235+ job routes</span>
-          <span>✓ £75 attendance & diagnosis</span>
-          <span>✓ Online booking</span>
-        </div>
-      </div>
-    </section>
-
     <section class="ken-workspace site-width">
-      <aside class="ken-visual-panel">
-        <div class="visual-top">
-          <div>
-            <span class="visual-kicker">INTERACTIVE KEN</span>
-            <h3>Your 3D plumbing companion</h3>
-          </div>
-          <button id="ken-fullscreen" class="ghost-button" type="button">⛶ Fullscreen</button>
+      <aside class="ken-view-panel">
+        <div class="ken-view-copy">
+          <div class="eyebrow">YOUR KENSINGTON PLUMBING COMPANION</div>
+          <h1>KEN</h1>
+          <h2>Chat. Diagnose. Estimate. Book.</h2>
+          <p>Tell Ken what’s gone wrong in your own words. He’ll help work out the likely job, give you an estimated price range and help you book a plumber.</p>
         </div>
 
-        <div class="ken-stage" id="ken-stage">
-          <div id="ken-large-3d" class="ken-large-3d" aria-label="Interactive 3D Ken"></div>
-
-          <div class="viewer-help">
-            <span>Drag to rotate</span>
-            <span>Scroll to zoom</span>
-            <span>Right-drag to pan</span>
+        <div class="ken-viewer" id="ken-viewer">
+          <div class="viewer-bathroom"></div>
+          <img id="ken-spin-image" src="/ken-angle-0.jpg" alt="Ken, Kensington Plumbing Services plumbing assistant" draggable="false">
+          <div class="viewer-ring"></div>
+          <div class="viewer-hint">
+            <span>↔ Drag to rotate</span>
+            <span>⌕ Scroll to zoom</span>
+            <span>✥ Drag vertically to move</span>
           </div>
-
-          <div class="viewer-controls">
-            <div class="control-title">KEN ACTIONS</div>
-            <button type="button" data-ken-action="wave">👋 Wave</button>
-            <button type="button" data-ken-action="thumbs">👍 Thumbs up</button>
-            <button type="button" data-ken-action="wrench">🔧 Pick up wrench</button>
-            <button type="button" data-ken-action="toilet">🚽 Inspect toilet</button>
-            <button type="button" data-ken-action="radiator">♨ Check radiator</button>
-            <button type="button" data-ken-action="home">↩ Back to centre</button>
-          </div>
-        </div>
-
-        <div class="angle-buttons">
-          <button type="button" data-ken-view="front" class="active">Front</button>
-          <button type="button" data-ken-view="left">Left</button>
-          <button type="button" data-ken-view="back">Back</button>
-          <button type="button" data-ken-view="right">Right</button>
-          <button type="button" data-ken-view="close">Close-up</button>
+          <button id="ken-fullscreen" class="fullscreen-btn" type="button">⛶ Fullscreen</button>
         </div>
       </aside>
 
@@ -100,17 +66,16 @@
       <div class="section-heading">
         <span>WHAT KEN CAN HELP WITH</span>
         <h2>Start with the problem.</h2>
-        <p>You don’t need to know what the part is called. Choose a common issue or just type what you can see.</p>
       </div>
       <div class="category-grid">
-        <button data-ken-prompt="I have a leak or pipework problem"><span>💧</span><b>Leaks & Pipework</b><small>Leaks, bursts, valves and pressure</small></button>
-        <button data-ken-prompt="My toilet has a problem"><span>🚽</span><b>Toilets</b><small>Running, filling, flushing or blocked</small></button>
-        <button data-ken-prompt="I have a tap or mixer problem"><span>🚰</span><b>Taps & Mixers</b><small>Drips, leaks and replacements</small></button>
-        <button data-ken-prompt="I have a shower or bath problem"><span>🚿</span><b>Showers & Baths</b><small>Valves, pressure, pumps and wastes</small></button>
-        <button data-ken-prompt="I have a radiator or heating problem"><span>♨</span><b>Radiators & Heating</b><small>Cold radiators, valves and circulation</small></button>
-        <button data-ken-prompt="I have a water tank, cylinder or pump problem"><span>▣</span><b>Tanks, Cylinders & Pumps</b><small>Overflows, hot water and pumps</small></button>
-        <button data-ken-prompt="I have a blocked sink, waste or drain"><span>↘</span><b>Blockages</b><small>Sinks, wastes, gullies and drains</small></button>
-        <button data-ken-prompt="I need help with a plumbing appliance"><span>▤</span><b>Appliances</b><small>Washing machines and dishwashers</small></button>
+        <button data-ken-prompt="I have a leak or pipework problem"><span>💧</span><b>Leaks & Pipework</b></button>
+        <button data-ken-prompt="My toilet has a problem"><span>🚽</span><b>Toilets</b></button>
+        <button data-ken-prompt="I have a tap or mixer problem"><span>🚰</span><b>Taps & Mixers</b></button>
+        <button data-ken-prompt="I have a shower or bath problem"><span>🚿</span><b>Showers & Baths</b></button>
+        <button data-ken-prompt="I have a radiator or heating problem"><span>♨</span><b>Radiators & Heating</b></button>
+        <button data-ken-prompt="I have a water tank, cylinder or pump problem"><span>▣</span><b>Tanks & Cylinders</b></button>
+        <button data-ken-prompt="I have a blocked sink, waste or drain"><span>↘</span><b>Blockages</b></button>
+        <button data-ken-prompt="I need help with a plumbing appliance"><span>▤</span><b>Appliances</b></button>
       </div>
     </section>
 
@@ -129,9 +94,7 @@
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="/ken-3d.js" defer></script>
+  <script src="/ken-viewer.js" defer></script>
   <script src="/ken.js" defer></script>
 </body>
 </html>
