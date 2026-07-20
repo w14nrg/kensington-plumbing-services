@@ -6,7 +6,7 @@
   <title>Ken | Plumbing Estimator & Online Booking | Kensington Plumbing Services</title>
   <meta name="description" content="Chat with Ken from Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair range and book a local plumber online.">
   <link rel="canonical" href="https://www.kensington.biz/ken.html">
-  <link rel="stylesheet" href="/ken.css">
+  <link rel="stylesheet" href="/ken-v6.css">
 </head>
 <body class="ken-page">
   <div class="site-topline">
@@ -39,7 +39,13 @@
           <p>Tell Ken what’s gone wrong in your own words. He’ll help work out the likely job, give you an estimated price range and help you book a plumber.</p>
         </div>
 
+        <div class="ken-stat-row">
+          <div><strong>235+</strong><span>Plumbing job types covered</span></div>
+          <div><strong id="ken-live-chat-count">0</strong><span>Ken chats started</span></div>
+          <div><strong>£75</strong><span>Attendance & diagnosis</span></div>
+        </div>
         <div class="ken-viewer" id="ken-viewer">
+          <div class="interactive-badge"><span></span> LIVE 3D KEN</div>
           <div id="ken-large-3d" class="ken-large-3d" aria-label="Interactive 3D Ken"></div>
           <div class="viewer-hint">
             <span>↔ Drag to rotate</span>
@@ -84,7 +90,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="/ken.js" defer></script>
-  <script src="/ken-3d.js" defer></script>
+  <script src="/ken-v6.js" defer></script>
+  <script src="/ken-v6-3d.js" defer></script>
 </body>
 </html>
