@@ -1,0 +1,65 @@
+KENSINGTON.BIZ — ONE UPLOAD BUILD
+=================================
+
+THIS PACKAGE IS DELIBERATELY FLAT.
+There are NO public or src folders.
+
+WHAT TO DO NOW
+1. Extract the ZIP on your computer.
+2. Open the extracted folder.
+3. Select EVERYTHING inside it.
+4. In GitHub, choose Add file > Upload files.
+5. Drag all selected files into the upload page in ONE GO.
+6. Commit directly to main.
+
+That replaces the main website files and leaves any older folders already in the repository untouched.
+
+WHAT WORKS IMMEDIATELY ON THE CURRENT STATIC SITE
+- New website design.
+- Ken on every page.
+- Ken's controlled live estimator with local fallback pricing.
+- All main service SEO pages.
+- All local SEO pages.
+- Existing important page names preserved.
+- Sitemap, robots.txt, canonical URLs, LocalBusiness schema, Service schema and FAQ schema.
+
+WHAT WE CONNECT AFTER THE WEBSITE UPLOAD
+- Cloudflare Pages/Worker backend.
+- D1 database binding named DB.
+- OPENAI_API_KEY secret for Ken's real AI conversation.
+- Optional OPENAI_MODEL variable (default is gpt-5-mini).
+- SUMUP_API_KEY secret.
+- SUMUP_MERCHANT_CODE variable/secret.
+- SITE_URL = https://www.kensington.biz
+
+IMPORTANT
+The £75 payment button will not take live payments until SumUp is connected.
+Ken's estimator still works before that.
+No API keys belong in GitHub.
+
+SEO
+This build retains the important existing service-page URLs such as:
+- plumbing-repairs.html
+- toilet-repairs.html
+- tap-replacement.html
+- shower-repairs.html
+- shower-pumps.html
+- leaks-pipework.html
+- radiator-valves.html
+- radiators-pumps.html
+- tanks-cylinders.html
+- small-plumbing-jobs.html
+- emergency-plumber.html
+- landlord-commercial.html
+
+It also includes the local pages:
+- plumber-kensington.html
+- plumber-west-kensington-w14.html
+- plumber-chelsea.html
+- plumber-hammersmith.html
+- plumber-fulham.html
+- plumber-earls-court-sw5.html
+- plumber-barons-court-w14.html
+- plumber-shepherds-bush-w12.html
+
+The old legacy folder URLs are included in _redirects ready for the Cloudflare move.

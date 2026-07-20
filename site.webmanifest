@@ -1,1 +1,9 @@
-{"name": "Kensington Plumbing Services", "short_name": "KPS", "start_url": "/", "display": "standalone", "background_color": "#fffdf8", "theme_color": "#102329", "icons": [{"src": "/assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]}
+{
+  "name": "Kensington Plumbing Services",
+  "short_name": "KPS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#071f31",
+  "icons": []
+}

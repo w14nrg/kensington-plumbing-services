@@ -1,26 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-labelledby="title desc">
-<title id="title">Ken, Kensington Plumbing Services virtual plumber</title>
-<desc id="desc">Friendly cartoon plumber in navy overalls holding a wrench</desc>
-<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#f7f2ea"/>
-    <stop offset="1" stop-color="#dceaf2"/>
-  </linearGradient>
-</defs>
-<circle cx="150" cy="150" r="148" fill="url(#bg)"/>
-<circle cx="150" cy="101" r="54" fill="#efc39d"/>
-<path d="M98 91c4-47 100-51 106 0H98z" fill="#102c40"/>
-<path d="M106 69c12-35 76-39 88 0z" fill="#0d6b9c"/>
-<rect x="111" y="59" width="78" height="18" rx="9" fill="#b87333"/>
-<circle cx="132" cy="102" r="5" fill="#18303e"/>
-<circle cx="170" cy="102" r="5" fill="#18303e"/>
-<path d="M134 124c11 9 24 9 35 0" fill="none" stroke="#8d5638" stroke-width="6" stroke-linecap="round"/>
-<path d="M72 285c2-75 30-120 78-120s76 45 78 120H72z" fill="#0d6b9c"/>
-<path d="M112 169v116M188 169v116" stroke="#f6f1e9" stroke-width="14"/>
-<rect x="109" y="207" width="82" height="21" rx="8" fill="#b87333"/>
-<circle cx="128" cy="217" r="5" fill="#102c40"/>
-<circle cx="172" cy="217" r="5" fill="#102c40"/>
-<path d="M219 157l22-28 14 10-20 29 17 17-14 14-18-17-25 25-14-14 25-25-17-17 14-14 16 20z" fill="#6d7b84"/>
-<path d="M218 150l23-29 8 6-22 30z" fill="#aab4ba"/>
-<circle cx="150" cy="150" r="145" fill="none" stroke="#fff" stroke-width="6" opacity=".7"/>
-</svg>
+.ken-widget,.ken-widget *{box-sizing:border-box}.ken-launcher{position:fixed;right:18px;bottom:18px;z-index:10000;border:0;border-radius:999px;padding:7px 14px 7px 7px;background:#071f31;color:#fff;display:flex;align-items:center;gap:10px;box-shadow:0 18px 55px rgba(4,23,35,.29);cursor:pointer;font:850 14px/1.15 Inter,system-ui,sans-serif}.ken-launcher img{width:52px;height:52px;border-radius:50%;background:#f6f1e9;border:2px solid #fff}.ken-launcher small{display:block;font-size:11px;font-weight:650;opacity:.78;margin-top:3px;text-align:left}
+.ken-panel{position:fixed;right:18px;bottom:88px;z-index:10001;width:min(420px,calc(100vw - 20px));height:min(720px,calc(100vh - 108px));background:#fff;border:1px solid #d5e1e7;border-radius:22px;overflow:hidden;display:none;flex-direction:column;box-shadow:0 22px 70px rgba(4,23,35,.29);font-family:Inter,system-ui,sans-serif;color:#102431}.ken-panel.open{display:flex;animation:kenIn .2s ease both}@keyframes kenIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.ken-head{background:linear-gradient(135deg,#071f31,#10445f);color:#fff;padding:13px 14px;display:flex;align-items:center;gap:11px}.ken-head img{width:47px;height:47px;border-radius:50%;background:#f6f1e9;border:2px solid #fff}.ken-head-copy{flex:1}.ken-head-copy strong{display:block}.ken-head-copy span{font-size:11px;opacity:.8}.ken-close{width:35px;height:35px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer}
+.ken-progress{height:4px;background:#e8eef2}.ken-progress span{display:block;height:100%;width:8%;background:#b87333;transition:width .25s ease}.ken-messages{flex:1;overflow:auto;background:#f4f7f9;padding:14px}.ken-row{display:flex;margin-bottom:10px}.ken-row.user{justify-content:flex-end}.ken-bubble{max-width:88%;padding:10px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap}.ken-row.bot .ken-bubble{background:#fff;border:1px solid #d8e2e8;border-bottom-left-radius:5px}.ken-row.user .ken-bubble{background:#0b6f9f;color:#fff;border-bottom-right-radius:5px}
+.ken-chips{display:flex;gap:7px;flex-wrap:wrap;padding:0 14px 10px;background:#f4f7f9}.ken-chip{border:1px solid #bfd0da;background:#fff;color:#071f31;border-radius:999px;padding:8px 10px;font-size:12px;font-weight:850;cursor:pointer}.ken-input{display:flex;gap:7px;padding:10px;background:#fff;border-top:1px solid #d8e2e8}.ken-input input{flex:1;min-width:0;border:1px solid #c9d6de;border-radius:11px;padding:11px;font:inherit}.ken-send{width:44px;border:0;border-radius:11px;background:#0b6f9f;color:#fff;font-size:18px;cursor:pointer}.ken-disclaimer{padding:0 12px 9px;background:#fff;color:#77858e;font-size:9.5px;line-height:1.35}
+.ken-estimate{background:#fff;border:1px solid #d2dfe6;border-radius:16px;padding:15px;margin:4px 0 12px}.ken-estimate-label{font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.1em;color:#0b6f9f}.ken-estimate h3{font-size:18px;margin:6px 0;color:#071f31}.ken-price{font-size:31px;font-weight:950;letter-spacing:-.04em;color:#071f31;margin:7px 0}.ken-meta{font-size:12px;color:#63717b;line-height:1.45}.ken-confidence{display:inline-block;margin-top:7px;background:#e8f5ef;color:#197a4d;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900}.ken-paynote{margin-top:11px;padding:10px;border-radius:11px;background:#f6f1e9;font-size:12px;line-height:1.45}.ken-form{display:grid;gap:8px;margin-top:12px}.ken-form input{border:1px solid #c9d6de;border-radius:10px;padding:10px;font:inherit}.ken-btn{border:0;border-radius:11px;padding:11px 12px;font-weight:900;cursor:pointer;text-align:center;text-decoration:none}.ken-btn.primary{background:#b87333;color:#fff}.ken-btn.secondary{background:#fff;color:#071f31;border:1px solid #cbd8df}.ken-alert{padding:10px;border-radius:11px;background:#fff3f1;border:1px solid #efc8c2;color:#7b271f;font-size:12px;line-height:1.4;margin-bottom:10px}.ken-typing{font-size:12px;color:#73828c;padding:3px 0 8px}
+@media(max-width:620px){.ken-launcher{right:9px;bottom:9px}.ken-launcher small{display:none}.ken-panel{right:5px;bottom:72px;width:calc(100vw - 10px);height:calc(100vh - 82px);border-radius:18px}}
+@media(prefers-reduced-motion:reduce){.ken-panel.open{animation:none}}
