@@ -1,4 +1,123 @@
-User-agent: *
-Allow: /
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Complete Your Booking | Kensington Plumbing Services</title>
+  <meta name="description" content="Confirm your £75 payment and choose your preferred plumbing appointment.">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/ken.css">
+  <link rel="icon" href="/assets/ken-avatar.svg" type="image/svg+xml">
+</head>
+<body>
 
-Sitemap: https://www.kensington.biz/sitemap.xml
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <span class="brand-mark">K</span>
+      <span class="brand-text">Kensington Plumbing Services<span>West London</span></span>
+    </a>
+    <button class="menu-btn" data-menu type="button" aria-label="Open menu">Menu</button>
+    <nav class="nav-links" aria-label="Main navigation">
+      <a href="/services.html">Services</a>
+      <a href="/areas.html">Areas</a>
+      <a href="/about.html">About</a>
+      <a href="/how-it-works.html">How it works</a>
+      <a href="tel:+442073713333">020 7371 3333</a>
+      <a class="nav-cta" href="#" data-open-ken>Ask Ken</a>
+    </nav>
+  </div>
+</header>
+
+<main><section class="page-hero"><div class="wrap"><div class="eyebrow">Secure booking</div><h1 id="payment-title">Checking your £75 payment…</h1><p id="payment-copy">Ken is confirming the payment with SumUp before opening the booking form.</p></div></section>
+<section class="section"><div class="wrap"><div class="status-box" id="payment-box">Please keep this page open for a moment.</div></div></section></main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <h3>Kensington Plumbing Services</h3>
+        <p>Local plumbing repairs, water-side heating work and small drainage jobs across West London.</p>
+        <small>33 Gunterstone Road, London W14 9BP</small>
+      </div>
+      <div><h4>Contact</h4><a href="tel:+442073713333">020 7371 3333</a><a href="mailto:info@kensington.biz">info@kensington.biz</a><a href="#" data-open-ken>Ask Ken</a></div>
+      <div><h4>Services</h4><a href="/services.html">Plumbing repairs</a><a href="/services.html#heating">Radiators & heating</a><a href="/services.html#drainage">Small drainage</a></div>
+      <div><h4>Information</h4><a href="/how-it-works.html">How pricing works</a><a href="/privacy.html">Privacy</a><a href="/areas.html">Areas covered</a></div>
+    </div>
+    <div class="footer-bottom"><small>© <span data-year></span> Kensington Plumbing Services.</small><small>Live estimates are guidance, not fixed quotations.</small></div>
+  </div>
+</footer>
+<script src="/assets/site.js" defer></script>
+<script src="/assets/ken.js" defer></script>
+
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const ref = params.get("ref");
+  const box = document.getElementById("payment-box");
+  const title = document.getElementById("payment-title");
+  const copy = document.getElementById("payment-copy");
+
+  if (!ref) {
+    title.textContent = "Payment reference missing";
+    box.textContent = "Please return to the homepage and start the booking through Ken.";
+    return;
+  }
+
+  async function check() {
+    const response = await fetch("/api/payment-status?ref=" + encodeURIComponent(ref));
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not verify payment.");
+    return data;
+  }
+
+  try {
+    let data = await check();
+    if (!data.paid) {
+      await new Promise(r => setTimeout(r, 2500));
+      data = await check();
+    }
+
+    if (!data.paid) {
+      title.textContent = "Payment not confirmed yet";
+      copy.textContent = "SumUp has not returned a paid status yet.";
+      box.innerHTML = '<p>Your payment may still be processing. Refresh this page shortly. If you were charged and this does not update, call 020 7371 3333.</p>';
+      return;
+    }
+
+    title.textContent = "Payment confirmed — choose your preferred visit";
+    copy.textContent = "Your £75 attendance and diagnosis payment is confirmed.";
+    box.innerHTML = `
+      <form id="booking-form" class="form-grid">
+        <div class="field"><label>Preferred date</label><input name="preferredDate" type="date" required></div>
+        <div class="field"><label>Preferred time</label><select name="preferredWindow" required><option value="">Choose…</option><option>8am–12pm</option><option>12pm–4pm</option><option>4pm–7pm</option></select></div>
+        <div class="field full"><label>Anything else Ken should pass to the plumber?</label><textarea name="notes" placeholder="Access instructions, parking, floor/flat number, anything that may help."></textarea></div>
+        <div class="field full"><button class="btn btn-primary" type="submit">Request this appointment</button></div>
+      </form>`;
+
+    document.getElementById("booking-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const values = Object.fromEntries(new FormData(form).entries());
+      const response = await fetch("/api/book", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({paymentId:data.paymentId,...values})
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error || "Could not save booking.");
+        return;
+      }
+      title.textContent = "Booking request received";
+      copy.textContent = "Thank you. Kensington Plumbing Services has your preferred appointment details.";
+      box.innerHTML = "<p><strong>Booking reference:</strong> " + result.bookingId + "</p><p>We will confirm the appointment details using the contact information you supplied to Ken.</p><p><a class='btn btn-dark' href='/'>Back to Kensington Plumbing Services</a></p>";
+    });
+  } catch(error) {
+    title.textContent = "We could not verify the payment";
+    box.textContent = error.message + " Please call 020 7371 3333 if you need help.";
+  }
+})();
+</script>
+</body>
+</html>

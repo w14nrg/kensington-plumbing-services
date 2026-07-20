@@ -1,0 +1,5 @@
+# Do not commit real secrets.
+# Use: npx wrangler secret put OPENAI_API_KEY
+OPENAI_API_KEY=your_openai_key
+SUMUP_API_KEY=your_sumup_key
+SUMUP_MERCHANT_CODE=your_sumup_merchant_code
