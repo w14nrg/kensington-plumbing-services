@@ -1,0 +1,8 @@
+KEN V9.1 DOUBLE-SCRIPT FIX
+
+Upload only _worker.js to the GitHub repository root and replace the current file.
+
+This stops the Worker injecting the old /ken.js and /ken.css over the dedicated V9 Ken page.
+The V9 confidence meter, progressive estimate, customer details and 3-hour booking flow can then load correctly.
+
+After Cloudflare redeploys, /api/health will include: "version":"v9.1"

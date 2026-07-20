@@ -506,16 +506,33 @@ async function serveAssetWithKen(request,env){
   const response=await env.ASSETS.fetch(request);
   const type=response.headers.get("content-type")||"";
   if(!type.includes("text/html"))return response;
+
+  const url=new URL(request.url);
   let html=await response.text();
   html=stripTawk(html);
-  if(!html.includes("/ken.css")){
-    html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css"></head>');
+
+  // The dedicated Ken page already loads its own V9 CSS and JavaScript.
+  // Never inject the older global Ken files on top of it, otherwise both
+  // apps initialise the same #ken-page-app and the old fallback overwrites V9.
+  const dedicatedKenPage=
+    url.pathname==="/ken" ||
+    url.pathname==="/ken.html" ||
+    html.includes('/ken-v9.js') ||
+    (html.includes('id="ken-page-app"') && html.includes('class="ken-page"'));
+
+  if(!dedicatedKenPage){
+    if(!html.includes('href="/ken.css"')&&!html.includes("href='/ken.css'")){
+      html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css"></head>');
+    }
+    if(!html.includes('src="/ken.js"')&&!html.includes("src='/ken.js'")){
+      html=html.replace(/<\/body>/i,'<script src="/ken.js" defer></script></body>');
+    }
   }
-  if(!html.includes("/ken.js")){
-    html=html.replace(/<\/body>/i,'<script src="/ken.js" defer></script></body>');
-  }
+
   const headers=new Headers(response.headers);
   headers.delete("content-length");
+  headers.set("x-ken-version","v9.1");
+  if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
 
@@ -530,7 +547,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.1",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }
