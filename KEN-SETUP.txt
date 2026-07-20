@@ -1,0 +1,64 @@
+KENSINGTON PLUMBING SERVICES — KEN / BIZBOT ADD-ON
+====================================================
+
+THIS PACKAGE DOES NOT REPLACE THE EXISTING WEBSITE.
+
+It contains only:
+- ken-avatar.png
+- ken.css
+- ken.js
+- ken.html
+- _worker.js
+- ken-schema.sql
+
+Your existing homepage, Google reviews, company history, service pages,
+local SEO pages, images and site design remain untouched.
+
+WHAT IT ADDS
+------------
+1. Ken popup on every HTML page after the site is served through Cloudflare Pages.
+2. A working "What can Ken help you with?" input added to the homepage.
+3. A dedicated full estimator page at:
+   https://www.kensington.biz/ken.html
+4. One continuous conversation.
+5. 235 distinct plumbing/heating/small-drainage job routes plus a catch-all diagnosis route.
+6. Estimated price inside the conversation.
+7. £75 SumUp Hosted Checkout flow.
+8. Payment verification and preferred appointment booking.
+9. D1 storage for conversations, estimates, leads, payments and bookings.
+10. Tawk hidden when Ken is active so customers do not see two chat systems.
+
+IMPORTANT
+---------
+Uploading these files to GitHub does NOT by itself switch Ken on while the
+site is served only by GitHub Pages.
+
+The existing site stays live unchanged.
+
+After upload, the next step is to connect the SAME repository to Cloudflare
+Pages. Cloudflare will run _worker.js, which serves the existing website files
+and injects ken.css and ken.js into each HTML page.
+
+Nothing in index.html, about.html or the existing SEO pages needs to be overwritten.
+
+CLOUDFLARE VARIABLES / SECRETS NEEDED LATER
+-------------------------------------------
+D1 binding:
+DB
+
+Secrets:
+OPENAI_API_KEY
+SUMUP_API_KEY
+SUMUP_MERCHANT_CODE
+
+Variables:
+OPENAI_MODEL = gpt-5
+SITE_URL = https://www.kensington.biz
+
+Run ken-schema.sql against the D1 database before live booking.
+
+PRICING
+-------
+The estimator currently contains 235 detailed job routes and an unusual-job
+catch-all. The price ranges should be reviewed against your final KPS rates
+before taking the estimator fully live.

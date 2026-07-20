@@ -128,7 +128,7 @@ ${JSON.stringify(state)}`;
     method:"POST",
     headers:{"Authorization":`Bearer ${env.OPENAI_API_KEY}`,"Content-Type":"application/json"},
     body:JSON.stringify({
-      model:env.OPENAI_MODEL||"gpt-5-mini",
+      model:env.OPENAI_MODEL||"gpt-5",
       input,
       store:false,
       text:{format:{type:"json_schema",name:"ken_turn",strict:true,schema}}
@@ -335,11 +335,11 @@ async function serveAssetWithKen(request,env){
   if(!type.includes("text/html"))return response;
   let html=await response.text();
   html=stripTawk(html);
-  if(!html.includes("/ken-overlay.css")){
-    html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken-overlay.css"></head>');
+  if(!html.includes("/ken.css")){
+    html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css"></head>');
   }
-  if(!html.includes("/ken-overlay.js")){
-    html=html.replace(/<\/body>/i,'<script src="/ken-overlay.js" defer></script></body>');
+  if(!html.includes("/ken.js")){
+    html=html.replace(/<\/body>/i,'<script src="/ken.js" defer></script></body>');
   }
   const headers=new Headers(response.headers);
   headers.delete("content-length");
@@ -356,6 +356,7 @@ export default{
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
       if(url.pathname==="/api/health")return json({ok:true,service:"Ken",jobs:JOBS.length});
+      if(url.pathname==="/ken")return Response.redirect(new URL("/ken.html",request.url).toString(),302);
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }

@@ -1,33 +1,375 @@
 (()=>{
-const JOBS=[{"code": "leak_trace", "name": "Trace and diagnose an unidentified leak", "min": 75, "max": 175, "confidence": "Medium", "keywords": ["find leak", "trace leak", "unknown leak", "ceiling leak", "water through ceiling", "leak downstairs", "damp patch"], "note": "The £75 attendance covers initial diagnosis. Opening floors, walls, boxing, bath panels or tiles may be additional if needed."}, {"code": "pipe_leak", "name": "Repair an accessible leaking pipe or fitting", "min": 95, "max": 185, "confidence": "High", "keywords": ["leaking pipe", "pipe leak", "joint leak", "fitting leak", "compression leak"], "note": "For a localised accessible leak. Difficult access can increase the final price."}, {"code": "burst_pipe", "name": "Burst pipe repair", "min": 145, "max": 325, "confidence": "Medium", "keywords": ["burst pipe", "pipe burst", "flooding pipe"], "note": "Assumes the damaged section can be isolated and accessed without major opening-up."}, {"code": "isolation_valve", "name": "Replace an isolation valve", "min": 110, "max": 190, "confidence": "High", "keywords": ["isolation valve", "isolator", "service valve", "ballofix"], "note": "Typical accessible isolation valve replacement."}, {"code": "stopcock", "name": "Repair or replace a stopcock", "min": 145, "max": 295, "confidence": "Medium", "keywords": ["stopcock", "stop tap", "main stop valve"], "note": "Access, seized fittings and isolation of the incoming main affect the final price."}, {"code": "flexi", "name": "Replace a flexible hose connector", "min": 95, "max": 165, "confidence": "High", "keywords": ["flexi hose", "flexible hose", "braided hose"], "note": "For an accessible appliance, basin, WC or tap flexible connection."}, {"code": "waste_leak", "name": "Repair a leaking waste pipe", "min": 110, "max": 225, "confidence": "Medium", "keywords": ["waste pipe leak", "waste leaking", "soil pipe leak"], "note": "Price depends on pipe size, access and fittings required."}, {"code": "wc_running", "name": "Running toilet / cistern continuously filling", "min": 95, "max": 180, "confidence": "High", "keywords": ["toilet running", "toilet keeps running", "cistern running", "keeps filling", "wont stop filling"], "note": "Usually an inlet valve, float valve or flush valve seal fault."}, {"code": "wc_not_filling", "name": "Toilet cistern not filling", "min": 95, "max": 180, "confidence": "High", "keywords": ["toilet not filling", "cistern not filling"], "note": "Usually an inlet valve, isolation valve or supply issue."}, {"code": "wc_not_flushing", "name": "Toilet not flushing", "min": 95, "max": 195, "confidence": "High", "keywords": ["toilet not flushing", "flush not working", "button not flushing", "handle not flushing"], "note": "Covers common button, cable, lever, siphon and flush-valve faults."}, {"code": "wc_base_leak", "name": "Toilet leaking at the base or pan connector", "min": 145, "max": 295, "confidence": "Medium", "keywords": ["toilet leaking base", "toilet base leak", "pan connector", "leak behind toilet"], "note": "May require removal and refitting of the WC and a new pan connector."}, {"code": "wc_cistern_leak", "name": "Repair a leaking toilet cistern", "min": 110, "max": 235, "confidence": "Medium", "keywords": ["cistern leaking", "toilet cistern leak"], "note": "The source may be a flush pipe, inlet, fixing bolts, internal component or cistern body."}, {"code": "wc_blocked", "name": "Unblock a toilet", "min": 95, "max": 225, "confidence": "Medium", "keywords": ["blocked toilet", "toilet blocked", "wc blocked", "toilet wont drain", "toilet overflowing"], "note": "Straightforward blockages are at the lower end. Deeper drainage issues may require specialist equipment."}, {"code": "wc_replace", "name": "Replace a close-coupled toilet", "min": 285, "max": 525, "confidence": "Medium", "keywords": ["replace toilet", "new toilet", "fit toilet", "install toilet"], "note": "Labour and standard connection materials. The toilet itself is excluded unless supplied by KPS."}, {"code": "concealed_cistern", "name": "Concealed cistern repair", "min": 145, "max": 365, "confidence": "Medium", "keywords": ["concealed cistern", "hidden cistern", "wall hung toilet", "geberit", "grohe cistern"], "note": "Assumes suitable service access. Tile removal or opening-up is additional."}, {"code": "tap_drip", "name": "Repair a dripping tap", "min": 95, "max": 180, "confidence": "High", "keywords": ["dripping tap", "tap dripping", "tap leaking spout"], "note": "Usually a cartridge, washer or valve repair. Specialist cartridges may affect parts cost."}, {"code": "tap_base", "name": "Repair a tap leaking at its base or connections", "min": 95, "max": 195, "confidence": "High", "keywords": ["tap leaking base", "tap base leak", "tap connection leak", "leak under tap"], "note": "For an accessible connection or seal repair."}, {"code": "kitchen_tap", "name": "Replace a kitchen mixer tap", "min": 135, "max": 245, "confidence": "High", "keywords": ["replace kitchen tap", "kitchen mixer", "fit kitchen tap", "new kitchen tap"], "note": "Labour and standard connections; tap cost excluded unless supplied by KPS."}, {"code": "basin_tap", "name": "Replace a basin tap or mixer", "min": 125, "max": 235, "confidence": "High", "keywords": ["replace basin tap", "basin mixer", "bathroom tap replacement"], "note": "Labour and standard connections; tap cost excluded unless supplied by KPS."}, {"code": "bath_tap", "name": "Replace bath taps or a bath mixer", "min": 165, "max": 365, "confidence": "Medium", "keywords": ["replace bath tap", "bath mixer", "bath taps"], "note": "Bath tap access varies significantly. Restricted access or bath removal increases cost."}, {"code": "outside_tap", "name": "Install or replace an outside tap", "min": 150, "max": 325, "confidence": "Medium", "keywords": ["outside tap", "garden tap", "external tap"], "note": "Assumes a nearby internal cold-water supply and straightforward wall penetration."}, {"code": "shower_drip", "name": "Repair a shower valve that drips or will not shut off", "min": 125, "max": 305, "confidence": "Medium", "keywords": ["shower dripping", "shower wont turn off", "shower valve leak"], "note": "Often a cartridge or valve fault. Specialist parts can affect cost."}, {"code": "shower_temp", "name": "Investigate a shower temperature fault", "min": 125, "max": 325, "confidence": "Medium", "keywords": ["shower not hot", "shower too hot", "shower temperature", "thermostatic shower", "shower goes cold"], "note": "Possible causes include cartridge, filters, pressure balance or wider hot-water supply."}, {"code": "shower_pressure", "name": "Diagnose low shower pressure", "min": 75, "max": 225, "confidence": "Medium", "keywords": ["low shower pressure", "shower pressure low", "weak shower"], "note": "Possible causes include filters, supply restrictions, pump faults or system design."}, {"code": "shower_hose", "name": "Replace a shower head, hose or handset", "min": 75, "max": 140, "confidence": "High", "keywords": ["shower hose", "shower head", "shower handset"], "note": "For a standard accessible replacement."}, {"code": "shower_pump", "name": "Diagnose or replace a shower pump", "min": 145, "max": 525, "confidence": "Medium", "keywords": ["shower pump", "pump not working", "noisy shower pump", "pump keeps running"], "note": "Diagnosis is at the lower end. Replacement depends on pump type, access and pump cost."}, {"code": "bath_waste", "name": "Repair a bath waste or overflow leak", "min": 125, "max": 265, "confidence": "Medium", "keywords": ["bath waste leak", "bath overflow", "leak under bath"], "note": "Bath-panel and under-bath access are the main price variables."}, {"code": "shower_waste", "name": "Repair a shower waste or trap leak", "min": 145, "max": 345, "confidence": "Medium", "keywords": ["shower waste leak", "shower trap", "leak under shower tray"], "note": "Access beneath the shower tray is the main price variable."}, {"code": "reseal", "name": "Remove and renew silicone around a bath or shower", "min": 120, "max": 245, "confidence": "High", "keywords": ["silicone shower", "reseal shower", "reseal bath", "silicone bath"], "note": "For removal of failed silicone and a clean reseal. Damaged finishes may need extra preparation."}, {"code": "sink_block", "name": "Unblock a kitchen sink", "min": 95, "max": 215, "confidence": "High", "keywords": ["blocked sink", "kitchen sink blocked", "sink not draining", "sink draining slowly"], "note": "Straightforward trap or local waste blockages are usually at the lower end."}, {"code": "basin_block", "name": "Unblock a basin", "min": 95, "max": 175, "confidence": "High", "keywords": ["blocked basin", "basin not draining", "bathroom sink blocked"], "note": "Typically a trap, pop-up waste or local waste-pipe blockage."}, {"code": "bath_block", "name": "Unblock a bath", "min": 95, "max": 200, "confidence": "High", "keywords": ["blocked bath", "bath not draining", "bath draining slowly"], "note": "Price depends on access to the trap/waste and blockage depth."}, {"code": "trap", "name": "Replace a sink or basin trap", "min": 95, "max": 175, "confidence": "High", "keywords": ["replace trap", "sink trap leak", "basin trap leak", "u bend", "p trap"], "note": "For a standard accessible trap replacement."}, {"code": "basin_waste", "name": "Replace a basin waste", "min": 105, "max": 195, "confidence": "High", "keywords": ["basin waste", "click clack", "pop up waste", "basin plug"], "note": "For a standard accessible basin waste replacement."}, {"code": "sink_waste", "name": "Replace a kitchen sink waste", "min": 105, "max": 200, "confidence": "High", "keywords": ["sink waste", "kitchen waste fitting"], "note": "A standard one-bowl waste is assumed."}, {"code": "washing_machine", "name": "Connect a washing machine", "min": 95, "max": 180, "confidence": "High", "keywords": ["connect washing machine", "install washing machine"], "note": "Assumes suitable water and waste connections already exist."}, {"code": "dishwasher", "name": "Connect a dishwasher", "min": 95, "max": 180, "confidence": "High", "keywords": ["connect dishwasher", "install dishwasher"], "note": "Assumes suitable water and waste connections already exist."}, {"code": "appliance_valve", "name": "Install or replace an appliance valve", "min": 110, "max": 215, "confidence": "High", "keywords": ["washing machine valve", "dishwasher valve", "appliance valve"], "note": "For an accessible cold-water connection."}, {"code": "rad_cold", "name": "Diagnose a radiator not heating properly", "min": 75, "max": 215, "confidence": "Medium", "keywords": ["radiator cold", "radiator not hot", "radiator not heating", "cold radiator"], "note": "Possible causes include air, balancing, a valve fault or circulation issue."}, {"code": "rad_leak", "name": "Repair a radiator leak", "min": 110, "max": 265, "confidence": "Medium", "keywords": ["radiator leaking", "leak from radiator", "radiator pipe leak"], "note": "The source may be a valve, tail, pipework connection or radiator body."}, {"code": "trv", "name": "Replace a thermostatic radiator valve", "min": 145, "max": 275, "confidence": "High", "keywords": ["replace trv", "trv leaking", "thermostatic radiator valve", "radiator valve stuck"], "note": "System type and drain-down requirements affect the final price."}, {"code": "rad_valve", "name": "Replace a radiator valve or lockshield", "min": 135, "max": 255, "confidence": "High", "keywords": ["lockshield", "radiator valve leak", "replace radiator valve"], "note": "System type and drain-down requirements affect the final price."}, {"code": "rad_replace", "name": "Replace a radiator", "min": 265, "max": 525, "confidence": "Medium", "keywords": ["replace radiator", "new radiator", "fit radiator", "install radiator"], "note": "Labour and standard connections; radiator cost excluded unless supplied by KPS."}, {"code": "bleed_balance", "name": "Bleed or basic-balance radiators", "min": 75, "max": 185, "confidence": "High", "keywords": ["bleed radiator", "balance radiators", "air in radiator"], "note": "For a straightforward visit to a small domestic heating system."}, {"code": "system_pressure", "name": "Investigate a heating-system pressure problem", "min": 75, "max": 225, "confidence": "Medium", "keywords": ["boiler pressure low", "pressure dropping", "heating pressure", "system pressure"], "note": "Possible causes include a leak, expansion issue, PRV or filling-loop fault. Internal gas-appliance work requires a suitably qualified engineer."}, {"code": "filling_loop", "name": "Replace an accessible filling loop", "min": 120, "max": 235, "confidence": "Medium", "keywords": ["filling loop", "boiler filling loop leak"], "note": "For an accessible water-side filling loop. Internal boiler work is excluded unless undertaken by a suitably qualified engineer."}, {"code": "tank_ballvalve", "name": "Replace a loft-tank float valve", "min": 145, "max": 285, "confidence": "High", "keywords": ["tank ball valve", "loft tank overflowing", "water tank overflow", "ballcock"], "note": "Assumes safe loft access and an accessible cold-water storage tank."}, {"code": "overflow", "name": "Investigate an overflowing warning pipe", "min": 95, "max": 245, "confidence": "Medium", "keywords": ["overflow pipe dripping", "overflow pipe running", "water from overflow"], "note": "The source may be a WC, storage tank, expansion tank or cylinder-related component."}, {"code": "cylinder_leak", "name": "Diagnose a hot-water cylinder leak", "min": 75, "max": 265, "confidence": "Medium", "keywords": ["cylinder leaking", "hot water tank leaking", "hot water cylinder leak"], "note": "Minor valve or connection leaks may be repairable. A failed cylinder needs a separate replacement quotation."}, {"code": "immersion", "name": "Diagnose an immersion-heater fault", "min": 95, "max": 325, "confidence": "Medium", "keywords": ["immersion heater", "no hot water immersion", "immersion not working"], "note": "Electrical testing or replacement must be carried out by a competent person."}, {"code": "internal_drain", "name": "Clear a small internal waste/drain blockage", "min": 120, "max": 285, "confidence": "Medium", "keywords": ["drain blocked", "blocked waste pipe", "internal drain blockage", "gurgling drain"], "note": "For small internal waste/drain issues. Main sewer or specialist jetting may require a drainage contractor."}, {"code": "gully", "name": "Clear a blocked external gully", "min": 120, "max": 265, "confidence": "Medium", "keywords": ["gully blocked", "outside drain blocked", "external drain blocked"], "note": "For a straightforward local gully blockage."}, {"code": "drain_smell", "name": "Investigate a drain or waste smell", "min": 75, "max": 225, "confidence": "Medium", "keywords": ["drain smell", "sewer smell", "bad smell bathroom", "waste smell"], "note": "Common causes include dry traps, failed seals, venting issues or hidden leaks."}, {"code": "basin_replace", "name": "Replace a basin", "min": 265, "max": 525, "confidence": "Medium", "keywords": ["replace basin", "new basin", "fit bathroom sink", "install basin"], "note": "Labour and standard connections; basin and taps excluded unless supplied by KPS."}, {"code": "vanity", "name": "Replace a vanity unit and basin", "min": 325, "max": 685, "confidence": "Medium", "keywords": ["replace vanity", "new vanity unit", "fit vanity", "install vanity"], "note": "Unit, basin and tap costs excluded unless supplied by KPS. Making-good is additional."}, {"code": "kitchen_sink", "name": "Replace a kitchen sink", "min": 305, "max": 655, "confidence": "Medium", "keywords": ["replace kitchen sink", "new kitchen sink", "fit kitchen sink"], "note": "Sink/tap costs and worktop alterations excluded unless specifically quoted."}, {"code": "water_filter", "name": "Install an under-sink water filter", "min": 120, "max": 265, "confidence": "Medium", "keywords": ["water filter", "under sink filter", "drinking water filter"], "note": "Assumes straightforward under-sink access and a compatible kit."}, {"code": "diagnosis", "name": "Plumbing fault diagnosis", "min": 75, "max": 200, "confidence": "Medium", "keywords": [], "note": "The £75 attendance covers the initial assessment. The repair price is confirmed before additional work."}];
-const state={sessionId:localStorage.getItem("kps_ken_session")||`session_${crypto.randomUUID()}`,step:"issue",issueText:"",activeLeak:false,accessLevel:"unknown",postcode:"",estimate:null,history:[]};
+"use strict";
+
+const PAGE_MODE = !!document.getElementById("ken-page-app");
+const state={
+  sessionId:localStorage.getItem("kps_ken_session")||`session_${crypto.randomUUID()}`,
+  conversation:[],
+  serverState:{},
+  estimate:null,
+  leadId:null
+};
 localStorage.setItem("kps_ken_session",state.sessionId);
+
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
-function matchJob(text){const q=norm(text);let best=JOBS[JOBS.length-1],score=0;for(const job of JOBS){let s=0;for(const kw of job.keywords){const k=norm(kw);if(q.includes(k))s+=10+k.split(" ").length*4;else for(const w of k.split(" "))if(w.length>=5&&q.includes(w))s+=1}if(s>score){score=s;best=job}}return score>=3?best:JOBS[JOBS.length-1]}
-function localEstimate(){const j=matchJob(state.issueText);let min=j.min,max=j.max,confidence=j.confidence;if(state.accessLevel==="awkward"){min+=35;max+=90;if(confidence==="High")confidence="Medium"}if(state.accessLevel==="concealed"){min+=80;max+=220;confidence="Medium"}return{estimateId:`local_${crypto.randomUUID()}`,jobName:j.name,min:Math.round(min/5)*5,max:Math.round(max/5)*5,confidence,note:j.note,callout:75,local:true}}
-function markup(){return`<div class="ken-widget"><button class="ken-launcher" type="button" aria-expanded="false"><img src="/ken-avatar.svg" alt=""><span><strong>Ask Ken</strong><small>Live plumbing estimate</small></span></button><section class="ken-panel" aria-label="Ask Ken live plumbing estimator"><header class="ken-head"><img src="/ken-avatar.svg" alt="Ken the virtual plumber"><div class="ken-head-copy"><strong>Ken</strong><span>Kensington Plumbing live estimator · £75 to book</span></div><button class="ken-close" type="button" aria-label="Close">×</button></header><div class="ken-progress"><span></span></div><div class="ken-messages" aria-live="polite"></div><div class="ken-chips"></div><div class="ken-input"><input type="text" maxlength="500" placeholder="Tell Ken what's gone wrong…" aria-label="Message Ken"><button class="ken-send" type="button" aria-label="Send">➜</button></div><div class="ken-disclaimer">Ken provides guidance and estimated price ranges, not a fixed quotation. The exact repair price is confirmed on site before additional work proceeds.</div></section></div>`}
-function add(text,role="bot"){const box=document.querySelector(".ken-messages");if(!box)return;const row=document.createElement("div");row.className=`ken-row ${role}`;row.innerHTML=`<div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`;box.appendChild(row);box.scrollTop=box.scrollHeight;state.history.push({role:role==="user"?"user":"assistant",content:text});state.history=state.history.slice(-10)}
-function addHtml(x){const box=document.querySelector(".ken-messages"),w=document.createElement("div");w.innerHTML=x;while(w.firstChild)box.appendChild(w.firstChild);box.scrollTop=box.scrollHeight}
-function chips(items=[]){const el=document.querySelector(".ken-chips");el.innerHTML="";items.forEach(i=>{const b=document.createElement("button");b.className="ken-chip";b.type="button";b.textContent=i.label;b.addEventListener("click",i.action);el.appendChild(b)})}
-function progress(p){const b=document.querySelector(".ken-progress span");if(b)b.style.width=`${p}%`}
-function ph(t){const i=document.querySelector(".ken-input input");if(i){i.placeholder=t;i.focus()}}
-async function api(path,options={}){const r=await fetch(path,{...options,headers:{"Content-Type":"application/json",...(options.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok){const e=new Error(d.error||"Service unavailable");e.data=d;throw e}return d}
-async function kenReply(message){const box=document.querySelector(".ken-messages"),t=document.createElement("div");t.className="ken-typing";t.textContent="Ken is thinking…";box.appendChild(t);try{const d=await api("/api/ken",{method:"POST",body:JSON.stringify({sessionId:state.sessionId,message,history:state.history.slice(0,-1)})});t.remove();add(d.reply)}catch{t.remove();const q=message.toLowerCase();let r="No problem. I’ll use your answers to run a controlled Kensington Plumbing estimate rather than guessing a price.";if(q.includes("leak"))r="I can help narrow that down. If water is actively escaping, isolate the nearest safe valve or main stopcock if you can do so safely. I’ll ask two quick questions before pricing it.";else if(q.includes("toilet"))r="Toilet faults are often inlet valves, flush mechanisms, pan connections or blockages. I’ll ask two quick questions and then run the job through our pricing engine.";else if(q.includes("radiator")||q.includes("heating"))r="I can estimate common radiator and water-side heating faults. I’ll ask about urgency and access, then run the job through our pricing engine.";add(r)}}
-function start(){state.step="issue";progress(8);add("Hi, I’m Ken 👋");add("Tell me what’s gone wrong in your own words. I’ll help narrow it down, then use the Kensington Plumbing pricing engine to give you an estimated repair range.");chips([{label:"I have a leak",action:()=>quick("I have a leak")},{label:"Toilet problem",action:()=>quick("My toilet has a problem")},{label:"Tap problem",action:()=>quick("I have a tap problem")},{label:"Shower problem",action:()=>quick("I have a shower problem")},{label:"Radiator / heating",action:()=>quick("I have a radiator or heating problem")},{label:"Blocked sink / drain",action:()=>quick("I have a blocked sink or drain")}])}
-async function quick(t){add(t,"user");state.issueText=t;chips([]);await kenReply(t);askLeak()}
-async function issue(t){state.issueText=t;add(t,"user");chips([]);await kenReply(t);askLeak()}
-function askLeak(){state.step="leak";progress(34);add("Is water actively leaking or overflowing right now?");chips([{label:"Yes — active leak",action:()=>setLeak(true)},{label:"No",action:()=>setLeak(false)},{label:"Not applicable",action:()=>setLeak(false)}])}
-function setLeak(v){state.activeLeak=v;add(v?"Yes — active leak":"No / not applicable","user");if(v)addHtml('<div class="ken-alert"><strong>Do this first:</strong> if it is safe, isolate the nearest affected valve or the main stopcock. If water is near electrical fittings, keep clear of affected electrics.</div>');askAccess()}
-function askAccess(){state.step="access";progress(54);add("How easy is the likely repair area to get to?");chips([{label:"Visible / easy access",action:()=>setAccess("easy","Visible / easy access")},{label:"Tight / awkward access",action:()=>setAccess("awkward","Tight / awkward access")},{label:"Behind tiles / boxing / floor",action:()=>setAccess("concealed","Behind tiles / boxing / floor")},{label:"I’m not sure",action:()=>setAccess("unknown","I’m not sure")}])}
-function setAccess(v,l){state.accessLevel=v;add(l,"user");state.step="postcode";progress(72);chips([]);add("What’s the postcode for the job?");ph("e.g. W14 9BP")}
-async function estimate(pc){state.postcode=pc.toUpperCase();add(state.postcode,"user");try{state.estimate=await api("/api/estimate",{method:"POST",body:JSON.stringify({sessionId:state.sessionId,issueText:state.issueText,activeLeak:state.activeLeak,accessLevel:state.accessLevel,postcode:state.postcode})})}catch{state.estimate=localEstimate()}state.step="estimate";progress(100);showEstimate()}
-function showEstimate(){const e=state.estimate;addHtml(`<div class="ken-estimate"><div class="ken-estimate-label">Your live estimate</div><h3>${esc(e.jobName)}</h3><div class="ken-price">£${e.min}–£${e.max}</div><div class="ken-meta">${esc(e.note)}</div><span class="ken-confidence">Estimate confidence: ${esc(e.confidence)}</span><div class="ken-paynote"><strong>£75 to book your plumber.</strong><br>The £75 covers attendance and diagnosis and is credited against the final repair price when we carry out the work. Your plumber confirms the exact price on site before additional work proceeds.</div><form class="ken-form" data-lead><input name="name" placeholder="Your name" required><input name="phone" placeholder="Mobile number" required><input name="email" type="email" placeholder="Email (optional)"><button class="ken-btn primary" type="submit">Continue — pay £75 & book</button><button class="ken-btn secondary" data-restart type="button">Start again</button></form></div>`);chips([]);document.querySelector("[data-lead]").addEventListener("submit",submitLead);document.querySelector("[data-restart]").addEventListener("click",reset)}
-async function submitLead(ev){ev.preventDefault();const f=ev.currentTarget,b=f.querySelector('button[type="submit"]'),v=Object.fromEntries(new FormData(f).entries());b.disabled=true;b.textContent="Preparing secure checkout…";try{const lead=await api("/api/lead",{method:"POST",body:JSON.stringify({...v,postcode:state.postcode,estimateId:state.estimate.estimateId,sessionId:state.sessionId})});const co=await api("/api/checkout",{method:"POST",body:JSON.stringify({leadId:lead.leadId,estimateId:state.estimate.estimateId})});location.href=co.checkoutUrl}catch(e){b.disabled=false;b.textContent="Continue — pay £75 & book";add("Your estimate is ready. Secure online payment is being connected next. For now, please call 020 7371 3333 to book and quote your estimated range.","bot")}}
-function reset(){Object.assign(state,{step:"issue",issueText:"",activeLeak:false,accessLevel:"unknown",postcode:"",estimate:null,history:[]});document.querySelector(".ken-messages").innerHTML="";ph("Tell Ken what's gone wrong…");start()}
-function submit(){const i=document.querySelector(".ken-input input"),v=i.value.trim();if(!v)return;i.value="";if(state.step==="issue")issue(v);else if(state.step==="postcode")estimate(v);else{add(v,"user");kenReply(v)}}
-function open(){document.querySelector(".ken-panel")?.classList.add("open");document.querySelector(".ken-launcher")?.setAttribute("aria-expanded","true");setTimeout(()=>document.querySelector(".ken-input input")?.focus(),50)}
-function close(){document.querySelector(".ken-panel")?.classList.remove("open");document.querySelector(".ken-launcher")?.setAttribute("aria-expanded","false")}
-function init(){const h=document.createElement("div");h.innerHTML=markup();document.body.appendChild(h.firstElementChild);document.querySelector(".ken-launcher").addEventListener("click",open);document.querySelector(".ken-close").addEventListener("click",close);document.querySelector(".ken-send").addEventListener("click",submit);document.querySelector(".ken-input input").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});start()}
-window.KenWidget={open,close,reset};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+const isHome=()=>location.pathname==="/"||/\/index\.html$/i.test(location.pathname);
+
+function homeEntryMarkup(){
+  return `
+    <section id="ken-home-entry">
+      <div class="ken-home-inner">
+        <div>
+          <div class="ken-home-kicker">Ask Ken · Online plumbing assistant</div>
+          <h2 class="ken-home-title">What can Ken help you with?</h2>
+          <p class="ken-home-sub">Describe the problem in your own words. Ken will talk it through with you, give you an estimated price range and help you book a plumber.</p>
+          <form class="ken-home-form" id="ken-home-form">
+            <input id="ken-home-input" type="text" autocomplete="off" placeholder="e.g. My toilet keeps filling after I flush…" aria-label="Describe your plumbing problem">
+            <button type="submit">Ask Ken →</button>
+          </form>
+          <div class="ken-home-trust">
+            <span>Real conversation</span>
+            <span>Estimated repair price</span>
+            <span>£75 to secure attendance & diagnosis</span>
+          </div>
+        </div>
+        <img class="ken-home-avatar" src="/ken-avatar.png" alt="Ken, Kensington Plumbing Services online plumbing assistant">
+      </div>
+    </section>`;
+}
+
+function injectHomeEntry(){
+  if(!isHome()||document.getElementById("ken-home-entry"))return;
+  const holder=document.createElement("div");
+  holder.innerHTML=homeEntryMarkup();
+  const section=holder.firstElementChild;
+
+  const header=document.querySelector("header");
+  const nav=document.querySelector("nav");
+  const hero=document.querySelector(".hero,.carousel,.header-carousel");
+  const main=document.querySelector("main");
+
+  if(header) header.insertAdjacentElement("afterend",section);
+  else if(nav&&nav.parentElement) nav.parentElement.insertAdjacentElement("afterend",section);
+  else if(hero) hero.insertAdjacentElement("beforebegin",section);
+  else if(main&&main.parentElement) main.parentElement.insertBefore(section,main);
+  else document.body.insertBefore(section,document.body.firstChild);
+
+  section.querySelector("#ken-home-form")?.addEventListener("submit",e=>{
+    e.preventDefault();
+    const input=section.querySelector("#ken-home-input");
+    const text=input.value.trim();
+    if(!text){input.focus();return}
+    input.value="";
+    openKen();
+    sendUserMessage(text);
+  });
+}
+
+function popupMarkup(){
+  return `
+  <div class="ken-widget">
+    <button class="ken-launcher" type="button" aria-expanded="false" aria-label="Ask Ken">
+      <img src="/ken-avatar.png" alt="">
+      <span><strong>Ask Ken</strong><small>Get help, an estimate & book</small></span>
+    </button>
+    <section class="ken-panel" aria-label="Chat with Ken">
+      ${chatMarkup(false)}
+    </section>
+  </div>`;
+}
+
+function chatMarkup(full){
+  return `
+    <header class="ken-head">
+      <img src="/ken-avatar.png" alt="Ken, Kensington Plumbing Services online plumbing assistant">
+      <div class="ken-head-copy">
+        <strong>Ken</strong>
+        <span>Kensington Plumbing Services · estimate & booking</span>
+        ${full ? "" : '<a class="ken-full-link" href="/ken.html">Open the full Ken estimator →</a>'}
+      </div>
+      ${full ? "" : '<button class="ken-close" type="button" aria-label="Close Ken">×</button>'}
+    </header>
+    <div class="ken-status"><span></span></div>
+    <div class="ken-messages" aria-live="polite"></div>
+    <div class="ken-mini-actions"></div>
+    <div class="ken-inputbar">
+      <input type="text" maxlength="700" autocomplete="off" placeholder="Type your reply…" aria-label="Message Ken">
+      <button class="ken-send" type="button" aria-label="Send">➜</button>
+    </div>
+    <div class="ken-footnote">Ken gives an estimated range from the information you provide. Your plumber confirms the exact price on site before additional work proceeds.</div>`;
+}
+
+function fullPageMarkup(){
+  return `
+    <div class="ken-full-chat">
+      ${chatMarkup(true)}
+    </div>`;
+}
+
+function uiRoot(){
+  return PAGE_MODE ? document.getElementById("ken-page-app") : document.querySelector(".ken-panel");
+}
+function q(sel){return uiRoot()?.querySelector(sel)}
+function messages(){return q(".ken-messages")}
+
+function addMessage(text,role="bot"){
+  const box=messages();
+  if(!box)return;
+  const row=document.createElement("div");
+  row.className=`ken-row ${role}`;
+  row.innerHTML=`<div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`;
+  box.appendChild(row);
+  box.scrollTop=box.scrollHeight;
+  state.conversation.push({role:role==="user"?"user":"assistant",content:text});
+  state.conversation=state.conversation.slice(-16);
+}
+
+function addHtml(html){
+  const box=messages();
+  if(!box)return;
+  const wrap=document.createElement("div");
+  wrap.innerHTML=html;
+  while(wrap.firstChild)box.appendChild(wrap.firstChild);
+  box.scrollTop=box.scrollHeight;
+}
+
+function setQuickReplies(items=[]){
+  const bar=q(".ken-mini-actions");
+  if(!bar)return;
+  bar.innerHTML="";
+  items.forEach(text=>{
+    const b=document.createElement("button");
+    b.className="ken-mini-action";
+    b.type="button";
+    b.textContent=text;
+    b.addEventListener("click",()=>sendUserMessage(text));
+    bar.appendChild(b);
+  });
+}
+
+function setProgress(value){
+  const bar=q(".ken-status span");
+  if(bar)bar.style.width=`${Math.max(12,Math.min(100,value||18))}%`;
+}
+
+function showTyping(){
+  const box=messages();
+  if(!box)return;
+  const t=document.createElement("div");
+  t.className="ken-typing";
+  t.dataset.kenTyping="1";
+  t.textContent="Ken is typing…";
+  box.appendChild(t);
+  box.scrollTop=box.scrollHeight;
+}
+function hideTyping(){q("[data-ken-typing]")?.remove()}
+
+async function api(path,options={}){
+  const r=await fetch(path,{
+    ...options,
+    headers:{"Content-Type":"application/json",...(options.headers||{})}
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){
+    const error=new Error(data.error||"Something went wrong.");
+    error.data=data;
+    throw error;
+  }
+  return data;
+}
+
+function openKen(){
+  if(PAGE_MODE)return;
+  document.querySelector(".ken-panel")?.classList.add("open");
+  document.querySelector(".ken-launcher")?.setAttribute("aria-expanded","true");
+  setTimeout(()=>q(".ken-inputbar input")?.focus(),60);
+}
+function closeKen(){
+  if(PAGE_MODE)return;
+  document.querySelector(".ken-panel")?.classList.remove("open");
+  document.querySelector(".ken-launcher")?.setAttribute("aria-expanded","false");
+}
+
+async function sendUserMessage(text){
+  const message=String(text||"").trim();
+  if(!message)return;
+
+  addMessage(message,"user");
+  setQuickReplies([]);
+  showTyping();
+
+  try{
+    const data=await api("/api/ken",{
+      method:"POST",
+      body:JSON.stringify({
+        sessionId:state.sessionId,
+        message,
+        history:state.conversation.slice(0,-1),
+        state:state.serverState,
+        page:location.pathname
+      })
+    });
+
+    hideTyping();
+    state.sessionId=data.sessionId||state.sessionId;
+    localStorage.setItem("kps_ken_session",state.sessionId);
+    state.serverState=data.state||state.serverState;
+    setProgress(data.progress||30);
+
+    if(data.safety) addHtml(`<div class="ken-safety">${esc(data.safety)}</div>`);
+    if(data.reply) addMessage(data.reply,"bot");
+    if(Array.isArray(data.quickReplies)&&data.quickReplies.length) setQuickReplies(data.quickReplies);
+
+    if(data.estimate){
+      state.estimate=data.estimate;
+      showEstimate(data.estimate);
+      setProgress(100);
+    }
+  }catch(error){
+    hideTyping();
+    addMessage("I’m having trouble connecting at the moment. Please try again in a moment, or call Kensington Plumbing Services on 020 7371 3333.","bot");
+  }
+}
+
+function showEstimate(e){
+  if(q(`[data-estimate-id="${CSS.escape(e.estimateId)}"]`))return;
+  addHtml(`
+    <div class="ken-estimate" data-estimate-id="${esc(e.estimateId)}">
+      <div class="ken-estimate-kicker">Your estimated repair</div>
+      <h3>${esc(e.jobName)}</h3>
+      <div class="ken-price">£${esc(e.min)}–£${esc(e.max)}</div>
+      <p>${esc(e.summary||"Based on what you’ve told Ken so far.")}</p>
+      <span class="ken-confidence">Estimate confidence: ${esc(e.confidence)}</span>
+      <div class="ken-pay-note">
+        <strong>£75 to book your plumber.</strong><br>
+        The £75 covers attendance and diagnosis. When we carry out the repair, it is deducted from the final repair price. Your plumber confirms the exact price before additional work proceeds.
+      </div>
+      <form class="ken-lead-form" data-ken-lead-form>
+        <input name="name" autocomplete="name" placeholder="Your name" required>
+        <input name="phone" autocomplete="tel" placeholder="Mobile number" required>
+        <input name="email" type="email" autocomplete="email" placeholder="Email (optional)">
+        <button class="ken-btn primary" type="submit">Continue — pay £75 & book</button>
+        <button class="ken-btn secondary" type="button" data-ken-new>Start a new problem</button>
+      </form>
+    </div>`);
+
+  q("[data-ken-lead-form]")?.addEventListener("submit",submitLead);
+  q("[data-ken-new]")?.addEventListener("click",resetKen);
+}
+
+async function submitLead(event){
+  event.preventDefault();
+  const form=event.currentTarget;
+  const submit=form.querySelector('button[type="submit"]');
+  const values=Object.fromEntries(new FormData(form).entries());
+  submit.disabled=true;
+  submit.textContent="Preparing secure payment…";
+
+  try{
+    const lead=await api("/api/lead",{
+      method:"POST",
+      body:JSON.stringify({
+        ...values,
+        sessionId:state.sessionId,
+        estimateId:state.estimate?.estimateId,
+        postcode:state.serverState?.postcode||""
+      })
+    });
+    state.leadId=lead.leadId;
+
+    const checkout=await api("/api/checkout",{
+      method:"POST",
+      body:JSON.stringify({leadId:state.leadId,estimateId:state.estimate?.estimateId})
+    });
+    location.href=checkout.checkoutUrl;
+  }catch(error){
+    submit.disabled=false;
+    submit.textContent="Continue — pay £75 & book";
+    if(error.data?.setupRequired){
+      addMessage("Your estimate is ready. Secure online payment is not connected yet, so please call 020 7371 3333 to book for now.","bot");
+    }else{
+      addMessage(error.message||"I couldn’t start the payment. Please call 020 7371 3333.","bot");
+    }
+  }
+}
+
+function resetKen(){
+  state.conversation=[];
+  state.serverState={};
+  state.estimate=null;
+  state.leadId=null;
+  const box=messages();
+  if(box)box.innerHTML="";
+  setProgress(18);
+  addMessage("No problem — tell me what you need help with next.","bot");
+  setQuickReplies([
+    "I have a leak",
+    "My toilet has a problem",
+    "I have a tap or shower problem",
+    "I have a radiator or heating problem",
+    "I have a blocked sink or drain"
+  ]);
+}
+
+function submitInput(){
+  const input=q(".ken-inputbar input");
+  const text=input?.value.trim();
+  if(!text)return;
+  input.value="";
+  sendUserMessage(text);
+}
+
+function initialiseChat(){
+  addMessage("Hi, I’m Ken. Tell me what’s gone wrong in your own words and I’ll help work out the likely problem, give you an estimated price range and help you book a plumber.","bot");
+  setQuickReplies([
+    "I have a leak",
+    "My toilet has a problem",
+    "I have a tap or shower problem",
+    "I have a radiator or heating problem",
+    "I have a blocked sink or drain"
+  ]);
+  setProgress(18);
+}
+
+function removeTawk(){
+  document.querySelectorAll('iframe[src*="tawk.to"],iframe[src*="tawk"],.tawk-min-container,#tawkchat-container,.tawk-button-circle').forEach(el=>el.remove());
+}
+
+function init(){
+  removeTawk();
+  try{
+    new MutationObserver(removeTawk).observe(document.documentElement,{childList:true,subtree:true});
+  }catch{}
+
+  if(PAGE_MODE){
+    document.getElementById("ken-page-app").innerHTML=fullPageMarkup();
+  }else{
+    injectHomeEntry();
+    const host=document.createElement("div");
+    host.innerHTML=popupMarkup();
+    document.body.appendChild(host.firstElementChild);
+
+    document.querySelector(".ken-launcher")?.addEventListener("click",openKen);
+    document.querySelector(".ken-close")?.addEventListener("click",closeKen);
+  }
+
+  q(".ken-send")?.addEventListener("click",submitInput);
+  q(".ken-inputbar input")?.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      submitInput();
+    }
+  });
+
+  initialiseChat();
+
+  // ?q= lets another page send the customer's first problem directly to the full estimator.
+  if(PAGE_MODE){
+    const initial=new URLSearchParams(location.search).get("q");
+    if(initial) setTimeout(()=>sendUserMessage(initial),120);
+  }
+}
+
+window.KenWidget={open:openKen,close:closeKen,send:sendUserMessage,reset:resetKen};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
