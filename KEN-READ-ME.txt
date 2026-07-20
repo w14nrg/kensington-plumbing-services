@@ -1,0 +1,132 @@
+KENSINGTON PLUMBING SERVICES — KEN ADD-ON
+========================================
+
+THIS BUILD DOES NOT REPLACE OR REDESIGN YOUR WEBSITE.
+
+It is deliberately an add-on to the existing Kensington Plumbing Services site.
+
+Your existing:
+- Google ratings/review sections
+- business history
+- family story
+- existing SEO copy
+- indexed service pages
+- local area pages
+- colours, images and layout
+
+all stay exactly where they are.
+
+WHAT THIS ADDS
+--------------
+1. A real "What can Ken help you with?" typing box on the homepage.
+   Whatever the customer types becomes the first message in the conversation.
+
+2. Ken on every page.
+   The Cloudflare Worker injects Ken into every HTML page automatically, so
+   we do not have to edit dozens of existing SEO pages.
+
+3. One continuous conversation.
+   Ken asks one relevant question at a time based on the actual problem.
+
+4. A live estimate inside the conversation.
+
+5. £75 booking flow:
+   - £75 covers attendance and diagnosis.
+   - When KPS carries out the repair, £75 is deducted from the final repair price.
+   - Exact price is confirmed on site before additional work.
+
+6. SumUp Hosted Checkout support.
+
+7. Post-payment appointment request.
+
+8. D1 storage for:
+   - conversations
+   - estimates
+   - leads
+   - payments
+   - bookings
+
+9. Tawk is removed/hidden so the page does not have two chat widgets.
+
+PLUMBING COVERAGE
+-----------------
+The internal job library currently contains 235 distinct job routes covering:
+
+- leaks and pipework
+- burst/frozen pipes
+- water pressure
+- stopcocks and isolation valves
+- every common WC/cistern/flush fault
+- concealed and wall-hung toilets
+- taps, mixers and valves
+- basins, sinks, traps and wastes
+- baths and showers
+- shower valves, cartridges and pumps
+- washing machines, dishwashers and fridge water
+- radiators, TRVs and water-side heating
+- heating circulation and motorised valves
+- common boiler/heating symptom routes
+- cold-water tanks
+- vented and unvented cylinders
+- immersion heaters
+- hot-water pressure and airlocks
+- internal wastes
+- soil stacks
+- gullies
+- blockages
+- small drainage
+- bathroom/kitchen plumbing first and second fix
+- water filters and softeners
+- landlord/commercial small plumbing
+- catch-all plumbing diagnosis
+
+If a customer's problem does not match a specific route, Ken keeps talking to
+them and uses the general plumbing diagnosis route rather than saying the job
+is not covered.
+
+FILES IN THIS ONE UPLOAD
+------------------------
+ken-avatar.png
+ken-overlay.css
+ken-overlay.js
+_worker.js
+ken-schema.sql
+KEN-READ-ME.txt
+
+UPLOAD
+------
+Extract the ZIP.
+Select ALL SIX files inside.
+GitHub > Add file > Upload files.
+Drop all six files into the ROOT of the existing repository and commit to main.
+
+Do not delete or replace the existing site files.
+
+AFTER THE GITHUB UPLOAD
+-----------------------
+We connect the existing repository to Cloudflare Pages.
+
+Cloudflare Pages settings:
+- Build command: leave blank
+- Build output directory: /
+  (or the repository root option shown by Cloudflare)
+
+Then add:
+- D1 binding name: DB
+- Secret: OPENAI_API_KEY
+- Variable: OPENAI_MODEL = gpt-5-mini
+- Secret: SUMUP_API_KEY
+- Secret/variable: SUMUP_MERCHANT_CODE
+- Variable: SITE_URL = https://www.kensington.biz
+
+Run the SQL in ken-schema.sql against the D1 database.
+
+IMPORTANT
+---------
+No OpenAI or SumUp API key goes into GitHub.
+
+The existing website remains the static content source.
+_worker.js serves that same content and injects Ken's CSS/JS into each HTML page.
+
+That is why the Google reviews, history and SEO pages are preserved instead of
+being rebuilt again.

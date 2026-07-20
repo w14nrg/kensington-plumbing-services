@@ -1,0 +1,142 @@
+:root{
+  --ken-navy:#092b47;
+  --ken-navy-2:#0f4167;
+  --ken-gold:#f2b632;
+  --ken-gold-dark:#d89b11;
+  --ken-paper:#ffffff;
+  --ken-ink:#10283a;
+  --ken-muted:#617384;
+  --ken-line:#d9e3ea;
+  --ken-mist:#f4f8fb;
+  --ken-green:#198754;
+  --ken-red:#b42318;
+}
+#ken-home-entry,.ken-launcher,.ken-panel,.ken-panel *{box-sizing:border-box}
+#ken-home-entry{
+  font-family:Arial,Helvetica,sans-serif;
+  background:linear-gradient(135deg,var(--ken-navy) 0%,var(--ken-navy-2) 100%);
+  color:#fff;
+  padding:26px 18px;
+  position:relative;
+  overflow:hidden;
+  z-index:1;
+}
+#ken-home-entry:before{
+  content:"";
+  position:absolute;
+  width:420px;height:420px;border-radius:50%;
+  background:rgba(255,255,255,.045);
+  right:-160px;top:-220px;
+}
+.ken-home-inner{
+  max-width:1180px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 150px;
+  gap:22px;align-items:center;position:relative;z-index:1;
+}
+.ken-home-copy{min-width:0}
+.ken-home-kicker{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#ffd979;margin-bottom:7px}
+.ken-home-title{font-size:clamp(28px,4vw,46px);line-height:1.05;margin:0 0 8px;font-weight:900;letter-spacing:-.03em}
+.ken-home-sub{font-size:15px;line-height:1.5;color:#dce9f2;margin:0 0 15px}
+.ken-home-form{
+  display:flex;background:#fff;border-radius:14px;padding:5px;
+  box-shadow:0 14px 38px rgba(0,0,0,.18);max-width:800px;
+}
+.ken-home-form input{
+  flex:1;min-width:0;border:0;outline:0;padding:12px 14px;
+  font-size:16px;color:var(--ken-ink);background:transparent;
+}
+.ken-home-form button{
+  border:0;border-radius:10px;background:var(--ken-gold);color:#09233a;
+  font-weight:900;padding:12px 18px;font-size:15px;cursor:pointer;white-space:nowrap;
+}
+.ken-home-form button:hover{background:#ffc84b}
+.ken-home-avatar{
+  width:140px;height:140px;border-radius:50%;object-fit:cover;
+  border:4px solid rgba(255,255,255,.9);
+  box-shadow:0 10px 28px rgba(0,0,0,.2);
+  background:#d7e5ef;
+}
+.ken-home-trust{
+  margin-top:10px;font-size:12px;color:#c9dce8;font-weight:700;
+}
+.ken-home-trust span{margin-right:15px}
+.ken-home-trust span:before{content:"✓";color:#ffd979;margin-right:5px}
+
+.ken-launcher{
+  position:fixed;right:18px;bottom:18px;z-index:2147483000;
+  display:flex;align-items:center;gap:10px;
+  border:0;border-radius:999px;padding:7px 14px 7px 7px;
+  background:var(--ken-navy);color:#fff;
+  box-shadow:0 18px 50px rgba(4,27,45,.28);
+  cursor:pointer;font:700 14px/1.2 Arial,Helvetica,sans-serif;
+}
+.ken-launcher img{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #fff;background:#dce8ef}
+.ken-launcher strong{display:block;text-align:left;font-size:14px}
+.ken-launcher small{display:block;text-align:left;font-size:11px;font-weight:500;opacity:.78;margin-top:2px}
+
+.ken-panel{
+  position:fixed;right:18px;bottom:88px;z-index:2147483001;
+  width:min(430px,calc(100vw - 20px));
+  height:min(720px,calc(100vh - 110px));
+  background:#fff;border:1px solid rgba(9,43,71,.14);border-radius:22px;
+  overflow:hidden;display:none;flex-direction:column;
+  box-shadow:0 24px 75px rgba(4,27,45,.31);
+  font-family:Arial,Helvetica,sans-serif;color:var(--ken-ink);
+}
+.ken-panel.open{display:flex;animation:kenPop .18s ease both}
+@keyframes kenPop{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.ken-head{
+  background:linear-gradient(135deg,var(--ken-navy),var(--ken-navy-2));
+  color:#fff;padding:13px 14px;display:flex;align-items:center;gap:11px;
+}
+.ken-head img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #fff}
+.ken-head-copy{flex:1;min-width:0}
+.ken-head-copy strong{display:block;font-size:16px}
+.ken-head-copy span{display:block;font-size:11px;opacity:.8;margin-top:2px}
+.ken-close{width:35px;height:35px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer}
+.ken-status{height:3px;background:#dfe8ee}.ken-status span{display:block;height:100%;width:18%;background:var(--ken-gold);transition:width .25s ease}
+.ken-messages{flex:1;overflow:auto;background:var(--ken-mist);padding:14px}
+.ken-row{display:flex;margin:0 0 10px}.ken-row.user{justify-content:flex-end}
+.ken-bubble{max-width:88%;padding:10px 12px;border-radius:16px;font-size:14px;line-height:1.46;white-space:pre-wrap}
+.ken-row.bot .ken-bubble{background:#fff;border:1px solid var(--ken-line);border-bottom-left-radius:5px}
+.ken-row.user .ken-bubble{background:#0e6696;color:#fff;border-bottom-right-radius:5px}
+.ken-typing{font-size:12px;color:#71828e;padding:2px 0 9px}
+.ken-inputbar{display:flex;gap:7px;padding:10px;background:#fff;border-top:1px solid var(--ken-line)}
+.ken-inputbar input{flex:1;min-width:0;border:1px solid #c9d6df;border-radius:11px;padding:11px;font-size:14px;outline:0}
+.ken-inputbar input:focus{border-color:#0e6696;box-shadow:0 0 0 3px rgba(14,102,150,.1)}
+.ken-send{width:44px;border:0;border-radius:11px;background:var(--ken-gold);color:#09233a;font-weight:900;font-size:18px;cursor:pointer}
+.ken-footnote{padding:0 12px 9px;background:#fff;color:#7b8992;font-size:9.5px;line-height:1.35}
+.ken-estimate{
+  background:#fff;border:1px solid #cfdce5;border-radius:16px;padding:15px;margin:5px 0 12px;
+  box-shadow:0 7px 22px rgba(9,43,71,.06);
+}
+.ken-estimate-kicker{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#0e6696}
+.ken-estimate h3{margin:6px 0 5px;font-size:18px;color:var(--ken-navy)}
+.ken-price{font-size:31px;font-weight:900;letter-spacing:-.035em;color:var(--ken-navy);margin:8px 0}
+.ken-estimate p{font-size:12px;color:var(--ken-muted);line-height:1.48;margin:6px 0}
+.ken-confidence{display:inline-block;background:#e8f5ef;color:var(--ken-green);border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;margin-top:5px}
+.ken-pay-note{margin-top:11px;background:#fff7e2;border:1px solid #f2d790;border-radius:11px;padding:10px;font-size:12px;line-height:1.45}
+.ken-lead-form{display:grid;gap:8px;margin-top:11px}
+.ken-lead-form input{border:1px solid #c9d6df;border-radius:10px;padding:10px;font-size:13px}
+.ken-btn{border:0;border-radius:11px;padding:11px 12px;font-weight:900;cursor:pointer;text-align:center;text-decoration:none;font-size:13px}
+.ken-btn.primary{background:var(--ken-gold);color:#09233a}
+.ken-btn.secondary{background:#fff;color:var(--ken-navy);border:1px solid #cbd8df}
+.ken-safety{background:#fff2f0;border:1px solid #f1c4bd;color:#7b271f;border-radius:11px;padding:10px;font-size:12px;line-height:1.45;margin:5px 0 10px}
+.ken-mini-actions{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;background:var(--ken-mist)}
+.ken-mini-action{border:1px solid #bdd0dc;background:#fff;color:var(--ken-navy);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:800;cursor:pointer}
+
+/* Remove common Tawk widget surfaces so Ken is the single chat experience. */
+iframe[src*="tawk.to"],iframe[src*="tawk"],.tawk-min-container,#tawkchat-container,.tawk-button-circle{display:none!important}
+
+@media(max-width:700px){
+  #ken-home-entry{padding:22px 14px}
+  .ken-home-inner{grid-template-columns:1fr 84px;gap:10px}
+  .ken-home-avatar{width:80px;height:80px}
+  .ken-home-form{display:grid;grid-template-columns:1fr}
+  .ken-home-form button{width:100%}
+  .ken-home-sub{font-size:14px}
+  .ken-launcher{right:9px;bottom:9px}
+  .ken-launcher small{display:none}
+  .ken-panel{right:5px;bottom:72px;width:calc(100vw - 10px);height:calc(100vh - 82px);border-radius:18px}
+}
+@media(prefers-reduced-motion:reduce){.ken-panel.open{animation:none}}
