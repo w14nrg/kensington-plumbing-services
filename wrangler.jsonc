@@ -1,24 +1,11 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "kensington-plumbing-ken",
-  "main": "src/index.js",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kensington-plumbing-services",
+  "main": "_worker.js",
   "compatibility_date": "2026-07-20",
   "assets": {
-    "directory": "./public",
+    "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "kensington-ken",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
-    }
-  ],
-  "vars": {
-    "SITE_URL": "https://www.kensington.biz",
-    "OPENAI_MODEL": "gpt-5-mini",
-    "CALL_OUT_AMOUNT": "75",
-    "SUMUP_CURRENCY": "GBP"
+    "run_worker_first": true
   }
 }
