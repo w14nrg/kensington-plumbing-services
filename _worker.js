@@ -238,8 +238,88 @@ async function handleLead(request,env){
   if(env.DB){
     await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode) VALUES (?,?,?,?,?,?,?)")
       .bind(leadId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,name,phone,email||null,clean(data.postcode,20)||null).run();
+    if(clean(data.reservationId,120)){
+      await env.DB.prepare("UPDATE reservations SET lead_id=? WHERE id=?").bind(leadId,clean(data.reservationId,120)).run();
+    }
   }
   return json({leadId});
+}
+
+function sqlTimestamp(date){
+  return date.toISOString().slice(0,19).replace("T"," ");
+}
+function timeLabel(t){
+  const [h,m]=t.split(":").map(Number);
+  const suffix=h>=12?"pm":"am",hour=((h+11)%12)+1;
+  return `${hour}${m?":"+String(m).padStart(2,"0"):""}${suffix}`;
+}
+function slotDefinition(date,start,end){
+  const [y,m,d]=date.split("-").map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d,12));
+  const dayLabel=new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/London"}).format(dt);
+  return {slotKey:`${date}_${start}_${end}`,date,start,end,dayLabel,timeLabel:`${timeLabel(start)}–${timeLabel(end)}`,displayLabel:`${dayLabel}, ${timeLabel(start)}–${timeLabel(end)}`};
+}
+function candidateSlots(days=21){
+  const slots=[];
+  for(let offset=1;offset<=days;offset++){
+    const dt=new Date(Date.now()+offset*86400000);
+    const date=dt.toISOString().slice(0,10);
+    const dow=dt.getUTCDay();
+    if(dow===0||dow===6)continue;
+    for(const [start,end] of [["08:00","10:00"],["10:00","12:00"],["12:00","14:00"],["14:00","16:00"],["16:00","17:00"]]){
+      slots.push(slotDefinition(date,start,end));
+    }
+  }
+  return slots;
+}
+async function availableSlots(env,limit=15){
+  if(!env.DB)return candidateSlots().slice(0,limit);
+  await env.DB.prepare("DELETE FROM reservations WHERE status='HELD' AND expires_at <= CURRENT_TIMESTAMP").run();
+  const held=await env.DB.prepare("SELECT slot_key FROM reservations WHERE status='CONFIRMED' OR (status='HELD' AND expires_at > CURRENT_TIMESTAMP)").all();
+  const booked=await env.DB.prepare("SELECT slot_key FROM bookings WHERE status='CONFIRMED'").all();
+  const taken=new Set([...(held.results||[]).map(x=>x.slot_key),...(booked.results||[]).map(x=>x.slot_key)]);
+  return candidateSlots().filter(x=>!taken.has(x.slotKey)).slice(0,limit);
+}
+async function handleSlots(request,env){
+  if(!env.DB)return json({error:"Booking database is not connected yet."},503);
+  return json({slots:await availableSlots(env,15)});
+}
+async function handleReserveSlot(request,env){
+  if(!env.DB)return json({error:"Booking database is not connected yet."},503);
+  const data=await request.json().catch(()=>({}));
+  const slotKey=clean(data.slotKey,100);
+  const available=await availableSlots(env,80);
+  const slot=available.find(x=>x.slotKey===slotKey);
+  if(!slot)return json({error:"That appointment is no longer available. Please choose another."},409);
+  const reservationId=uid("res");
+  const expiresAt=sqlTimestamp(new Date(Date.now()+35*60*1000));
+  try{
+    await env.DB.prepare(`INSERT INTO reservations
+      (id,session_id,estimate_id,slot_key,appointment_date,start_time,end_time,status,expires_at)
+      VALUES (?,?,?,?,?,?,?,?,?)`)
+      .bind(reservationId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,slot.slotKey,slot.date,slot.start,slot.end,"HELD",expiresAt).run();
+  }catch{
+    return json({error:"That appointment has just been taken. Please choose another."},409);
+  }
+  return json({reservation:{reservationId,...slot,expiresAt}});
+}
+async function confirmReservation(env,payment){
+  if(!env.DB||!payment.reservation_id)return null;
+  const existing=await env.DB.prepare("SELECT * FROM bookings WHERE payment_id=?").bind(payment.id).first();
+  if(existing)return existing;
+  const reservation=await env.DB.prepare("SELECT * FROM reservations WHERE id=?").bind(payment.reservation_id).first();
+  if(!reservation)return null;
+  const bookingId=uid("book");
+  try{
+    await env.DB.prepare(`INSERT INTO bookings
+      (id,payment_id,reservation_id,lead_id,slot_key,appointment_date,start_time,end_time,status)
+      VALUES (?,?,?,?,?,?,?,?,?)`)
+      .bind(bookingId,payment.id,reservation.id,payment.lead_id||reservation.lead_id||null,reservation.slot_key,reservation.appointment_date,reservation.start_time,reservation.end_time,"CONFIRMED").run();
+  }catch{
+    return await env.DB.prepare("SELECT * FROM bookings WHERE slot_key=?").bind(reservation.slot_key).first();
+  }
+  await env.DB.prepare("UPDATE reservations SET status='CONFIRMED' WHERE id=?").bind(reservation.id).run();
+  return await env.DB.prepare("SELECT * FROM bookings WHERE id=?").bind(bookingId).first();
 }
 
 async function handleCheckout(request,env){
@@ -247,6 +327,11 @@ async function handleCheckout(request,env){
   if(!env.SUMUP_API_KEY||!env.SUMUP_MERCHANT_CODE){
     return json({error:"Secure SumUp payment is not connected yet.",setupRequired:true},503);
   }
+  if(!env.DB)return json({error:"Booking database is not connected yet."},503);
+  const reservationId=clean(data.reservationId,120);
+  const reservation=await env.DB.prepare("SELECT * FROM reservations WHERE id=? AND status='HELD' AND expires_at > CURRENT_TIMESTAMP").bind(reservationId).first();
+  if(!reservation)return json({error:"Your appointment hold has expired. Please choose another available slot."},409);
+
   const checkoutReference=`KPS-${Date.now()}-${crypto.randomUUID().slice(0,8)}`;
   const site=(env.SITE_URL||"https://www.kensington.biz").replace(/\/$/,"");
   const sumupResponse=await fetch("https://api.sumup.com/v0.1/checkouts",{
@@ -257,7 +342,7 @@ async function handleCheckout(request,env){
       amount:75,
       currency:"GBP",
       merchant_code:env.SUMUP_MERCHANT_CODE,
-      description:"Kensington Plumbing Services - attendance and diagnosis",
+      description:`KPS attendance & diagnosis - ${reservation.appointment_date} ${reservation.start_time}`,
       redirect_url:`${site}/ken-payment-return?ref=${encodeURIComponent(checkoutReference)}`,
       hosted_checkout:{enabled:true}
     })
@@ -266,10 +351,11 @@ async function handleCheckout(request,env){
   if(!sumupResponse.ok||!sumup.hosted_checkout_url)return json({error:"I couldn’t start the SumUp payment."},502);
 
   const paymentId=uid("pay");
-  if(env.DB){
-    await env.DB.prepare("INSERT INTO payments (id,lead_id,estimate_id,checkout_reference,sumup_checkout_id,status) VALUES (?,?,?,?,?,?)")
-      .bind(paymentId,clean(data.leadId,100)||null,clean(data.estimateId,100)||null,checkoutReference,sumup.id||null,sumup.status||"PENDING").run();
-  }
+  await env.DB.prepare(`INSERT INTO payments
+    (id,lead_id,estimate_id,reservation_id,checkout_reference,sumup_checkout_id,status)
+    VALUES (?,?,?,?,?,?,?)`)
+    .bind(paymentId,clean(data.leadId,100)||null,clean(data.estimateId,100)||null,reservationId,checkoutReference,sumup.id||null,sumup.status||"PENDING").run();
+
   return json({paymentId,checkoutUrl:sumup.hosted_checkout_url});
 }
 
@@ -287,9 +373,12 @@ async function handlePaymentStatus(request,env){
       const checkout=await response.json();
       status=checkout.status||status;
       await env.DB.prepare("UPDATE payments SET status=? WHERE id=?").bind(status,payment.id).run();
+      payment.status=status;
     }
   }
-  return json({paymentId:payment.id,paid:String(status).toUpperCase()==="PAID",status});
+  let booking=null;
+  if(String(status).toUpperCase()==="PAID")booking=await confirmReservation(env,payment);
+  return json({paymentId:payment.id,paid:String(status).toUpperCase()==="PAID",status,booking});
 }
 
 async function handleBook(request,env){
@@ -304,22 +393,18 @@ async function handleBook(request,env){
 }
 
 function paymentReturnPage(ref){
-  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Complete your booking | Kensington Plumbing Services</title>
-  <style>body{margin:0;font-family:Arial,sans-serif;background:#f4f7f9;color:#10283a}.wrap{max-width:760px;margin:60px auto;padding:20px}.card{background:#fff;border:1px solid #d9e3ea;border-radius:20px;padding:28px;box-shadow:0 18px 50px rgba(9,43,71,.1)}h1{color:#092b47}input,select,textarea{width:100%;box-sizing:border-box;padding:12px;margin:6px 0 14px;border:1px solid #c9d6df;border-radius:10px;font:inherit}button{border:0;background:#f2b632;color:#09233a;padding:13px 18px;border-radius:10px;font-weight:900;cursor:pointer}</style></head>
-  <body><main class="wrap"><div class="card"><h1 id="title">Checking your £75 payment…</h1><p id="copy">Please keep this page open for a moment.</p><div id="content"></div></div></main>
-  <script>
-  (async()=>{
-    const ref=${JSON.stringify(ref)},title=document.getElementById("title"),copy=document.getElementById("copy"),content=document.getElementById("content");
-    async function check(){const r=await fetch("/api/payment-status?ref="+encodeURIComponent(ref));const d=await r.json();if(!r.ok)throw new Error(d.error||"Could not verify payment.");return d}
-    try{
-      let d=await check();if(!d.paid){await new Promise(r=>setTimeout(r,2500));d=await check()}
-      if(!d.paid){title.textContent="Payment not confirmed yet";copy.textContent="The payment may still be processing. Refresh this page shortly, or call 020 7371 3333 if you need help.";return}
-      title.textContent="Payment confirmed — choose your preferred visit";copy.textContent="Your £75 attendance and diagnosis payment is confirmed.";
-      content.innerHTML='<form id="book"><label>Preferred date</label><input name="preferredDate" type="date" required><label>Preferred time window</label><select name="preferredWindow" required><option value="">Choose…</option><option>8am–12pm</option><option>12pm–4pm</option><option>4pm–7pm</option></select><label>Anything else we should know?</label><textarea name="notes" rows="5"></textarea><button>Request appointment</button></form>';
-      document.getElementById("book").addEventListener("submit",async e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.currentTarget).entries());const r=await fetch("/api/book",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:d.paymentId,...v})});const x=await r.json();if(!r.ok){alert(x.error||"Could not save booking.");return}title.textContent="Booking request received";copy.textContent="Thank you. Kensington Plumbing Services has your preferred appointment details.";content.innerHTML="<p>We’ll confirm the appointment using the contact details you gave Ken.</p><p><a href=\"/\">Return to Kensington Plumbing Services</a></p>"})
-    }catch(e){title.textContent="We could not verify the payment";copy.textContent=e.message+" Please call 020 7371 3333 if you need help."}
-  })();
-  </script></body></html>`;
+  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Booking confirmation | Kensington Plumbing Services</title>
+  <style>body{margin:0;font-family:Inter,Arial,sans-serif;background:#f6f1e9;color:#102631}.wrap{max-width:760px;margin:60px auto;padding:20px}.card{background:#fff;border:1px solid #ded6cb;border-radius:24px;padding:32px;box-shadow:0 18px 55px rgba(7,31,49,.12)}h1{font-family:Georgia,serif;color:#071f31;font-size:40px}.badge{display:inline-block;background:#e6f5ee;color:#1d744f;padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px}.slot{margin:20px 0;background:#f7f3ec;border:1px solid #ead9c6;border-radius:15px;padding:16px;font-size:20px;font-weight:850;color:#071f31}a{color:#071f31;font-weight:800}</style></head>
+  <body><main class="wrap"><div class="card"><span class="badge">Kensington Plumbing Services</span><h1 id="title">Checking your £75 payment…</h1><p id="copy">Please keep this page open for a moment.</p><div id="content"></div></div></main>
+  <script>(async()=>{const ref=${JSON.stringify(ref)},title=document.getElementById("title"),copy=document.getElementById("copy"),content=document.getElementById("content");
+  async function check(){const r=await fetch("/api/payment-status?ref="+encodeURIComponent(ref));const d=await r.json();if(!r.ok)throw new Error(d.error||"Could not verify payment.");return d}
+  try{let d=await check();if(!d.paid){await new Promise(r=>setTimeout(r,2500));d=await check()}
+  if(!d.paid){title.textContent="Payment not confirmed yet";copy.textContent="Your payment may still be processing. Refresh this page shortly or call 020 7371 3333.";return}
+  title.textContent="You’re booked in.";copy.textContent="Your £75 payment has been confirmed and your appointment is booked.";
+  if(d.booking){const x=d.booking;content.innerHTML='<div class="slot">'+x.appointment_date+' · '+x.start_time+'–'+x.end_time+'</div><p>The £75 covers attendance and diagnosis and is deducted from the final repair price when we carry out the work. Your plumber will confirm the exact repair price on site before additional work proceeds.</p><p><a href="/">Return to Kensington Plumbing Services</a></p>'}
+  else content.innerHTML='<p>Your payment is confirmed. Please call 020 7371 3333 with your payment reference so we can confirm the appointment.</p>'}
+  catch(e){title.textContent="We could not verify the payment";copy.textContent=e.message+" Please call 020 7371 3333."}})();</script></body></html>`;
 }
 
 function stripTawk(html){
@@ -351,6 +436,8 @@ export default{
     const url=new URL(request.url);
     try{
       if(request.method==="POST"&&url.pathname==="/api/ken")return handleKen(request,env);
+      if(request.method==="GET"&&url.pathname==="/api/slots")return handleSlots(request,env);
+      if(request.method==="POST"&&url.pathname==="/api/reserve-slot")return handleReserveSlot(request,env);
       if(request.method==="POST"&&url.pathname==="/api/lead")return handleLead(request,env);
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);

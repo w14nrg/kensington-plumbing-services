@@ -3,54 +3,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ask Ken | Online Plumbing Estimator & Booking | Kensington Plumbing Services</title>
-  <meta name="description" content="Chat with Ken from Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair price range and continue to online booking.">
+  <title>Ask Ken | Plumbing Estimator & Online Booking | Kensington Plumbing Services</title>
+  <meta name="description" content="Chat with Ken at Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair price, choose an available appointment and pay the £75 attendance and diagnosis fee securely online.">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.kensington.biz/ken.html">
-  <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/ken.css">
   <meta property="og:title" content="Ask Ken | Kensington Plumbing Services">
-  <meta property="og:description" content="Describe your plumbing problem, get an estimated price range and book a plumber online.">
+  <meta property="og:description" content="Chat. Diagnose. Estimate. Book. Get plumbing help and book online with Kensington Plumbing Services.">
   <meta property="og:url" content="https://www.kensington.biz/ken.html">
   <meta property="og:type" content="website">
 </head>
-<body class="ken-page-shell">
-  <header class="ken-page-top">
-    <div class="ken-page-top-inner">
-      <a class="ken-page-brand" href="/">
-        KPS Kensington Plumbing Services
-        <small>West London</small>
+<body class="ken-page">
+  <header class="kps-header">
+    <div class="kps-header-inner">
+      <a href="/" class="kps-brand">
+        <span class="kps-mark">KPS</span>
+        <span><strong>Kensington Plumbing Services</strong><small>WEST LONDON</small></span>
       </a>
-      <nav class="ken-page-nav" aria-label="Main navigation">
+      <nav class="kps-nav">
         <a href="/">Home</a>
         <a href="/service.html">Services</a>
+        <a href="/areas.html">Areas</a>
         <a href="/about.html">About</a>
         <a href="/contact.html">Contact</a>
-        <a class="ken-page-call" href="tel:+442073713333">Call 020 7371 3333</a>
       </nav>
+      <a class="kps-call" href="tel:+442073713333">Call 020 7371 3333</a>
     </div>
   </header>
 
   <main class="ken-page-main">
-    <div class="ken-page-grid">
-      <section class="ken-page-intro">
-        <img src="/ken-avatar.png" alt="Ken, Kensington Plumbing Services online plumbing assistant">
-        <h1>Ask Ken.</h1>
-        <p>Tell me what’s happening with your plumbing. You don’t need to know the technical name for anything — just explain what you can see, hear or feel.</p>
-        <p>I’ll ask the questions that matter for that particular problem, give you an estimated price range and help you move straight into booking.</p>
-        <div class="ken-page-points">
-          <div class="ken-page-point">Natural conversation, not a long questionnaire</div>
-          <div class="ken-page-point">Covers common and unusual plumbing faults</div>
-          <div class="ken-page-point">Estimated repair price before booking</div>
-          <div class="ken-page-point">£75 secures attendance and diagnosis</div>
-          <div class="ken-page-point">£75 deducted from the final repair price when we carry out the work</div>
-        </div>
-        <p class="ken-page-disclaimer">For an active leak, isolate the nearest safe valve or main stopcock if you can do so safely. Suspected gas escapes should be reported immediately to the National Gas Emergency Service.</p>
-      </section>
+    <section class="ken-page-hero">
+      <div class="ken-hero-copy">
+        <div class="ken-eyebrow"><span></span> YOUR KENSINGTON PLUMBING COMPANION</div>
+        <h1>KEN<span>.</span></h1>
+        <h2>Chat. Diagnose. Estimate. Book.</h2>
+        <p>Describe the problem in your own words. Ken will talk it through with you, work out the likely job, give you an estimated price range and help you book a plumber.</p>
+      </div>
+    </section>
 
-      <section id="ken-page-app" aria-label="Ken online plumbing estimator"></section>
-    </div>
+    <section class="ken-bizbot-grid">
+      <aside class="ken-character-card">
+        <div class="ken-character-frame">
+          <div class="ken-speech" id="ken-character-speech">Tell me what’s gone wrong. You don’t need to know the plumbing terminology.</div>
+          <img src="/ken-avatar.png" alt="Ken, Kensington Plumbing Services plumbing assistant">
+        </div>
+        <div class="ken-character-copy">
+          <h3>Ken</h3>
+          <p>Your Kensington Plumbing Services assistant. Start here for plumbing faults, estimates and online booking.</p>
+          <div class="ken-character-badges">
+            <span>235+ job routes</span><span>Live estimates</span><span>Online booking</span>
+          </div>
+        </div>
+      </aside>
+
+      <section id="ken-page-app" class="ken-page-chat" aria-label="Chat with Ken"></section>
+    </section>
+
+    <section class="ken-category-section">
+      <div class="ken-category-heading">
+        <span>START WITH A PROBLEM</span>
+        <h2>What can Ken help you with?</h2>
+        <p>Choose a common area or simply type the problem into the chat. Ken can handle unusual jobs too.</p>
+      </div>
+      <div class="ken-category-grid">
+        <button data-ken-prompt="I have a leak or a problem with pipework"><span>💧</span><strong>Leaks & Pipework</strong><small>Leaks, bursts, valves, stopcocks and pressure.</small></button>
+        <button data-ken-prompt="My toilet has a problem"><span>🚽</span><strong>Toilets</strong><small>Running, filling, flushing, leaking or blocked.</small></button>
+        <button data-ken-prompt="I have a problem with a tap"><span>🚰</span><strong>Taps</strong><small>Drips, leaks, cartridges and replacements.</small></button>
+        <button data-ken-prompt="I have a shower or bath problem"><span>🚿</span><strong>Showers & Baths</strong><small>Valves, temperature, pressure, pumps and wastes.</small></button>
+        <button data-ken-prompt="I have a radiator or heating problem"><span>♨️</span><strong>Radiators & Heating</strong><small>Cold radiators, TRVs, leaks and circulation.</small></button>
+        <button data-ken-prompt="I have a problem with a water tank, cylinder or pump"><span>🛠️</span><strong>Pumps & Tanks</strong><small>Storage tanks, cylinders, overflows and pumps.</small></button>
+        <button data-ken-prompt="I have a blocked sink, waste pipe or drain"><span>↘️</span><strong>Blockages</strong><small>Sinks, basins, baths, wastes, gullies and drains.</small></button>
+        <button data-ken-prompt="I need help connecting or repairing a plumbing appliance"><span>◫</span><strong>Appliances</strong><small>Washing machines, dishwashers and water feeds.</small></button>
+      </div>
+    </section>
+
+    <section class="ken-booking-explainer">
+      <div><strong>1</strong><span><b>Talk to Ken</b>Describe the problem naturally.</span></div>
+      <div><strong>2</strong><span><b>Get an estimate</b>See the likely repair range.</span></div>
+      <div><strong>3</strong><span><b>Choose a real slot</b>Select an available appointment.</span></div>
+      <div><strong>4</strong><span><b>Pay £75</b>SumUp payment confirms the booking.</span></div>
+    </section>
   </main>
+
+  <footer class="ken-footer">
+    <div><strong>Kensington Plumbing Services</strong><span>33 Gunterstone Road, London W14 9BP</span></div>
+    <div><a href="tel:+442073713333">020 7371 3333</a><a href="mailto:info@kensington.biz">info@kensington.biz</a></div>
+  </footer>
 
   <script src="/ken.js" defer></script>
 </body>

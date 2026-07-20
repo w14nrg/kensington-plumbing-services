@@ -1,0 +1,76 @@
+KENSINGTON KEN / BIZBOT V2
+==========================
+
+This V2 is the working flow build.
+
+FILES
+-----
+ken.html        Dedicated Chelsea-BizBot-style Ken page.
+ken.css         Dedicated page + popup + homepage styling.
+ken.js          Shared conversation / estimate / real booking-slot / SumUp flow.
+ken-avatar.png  New Ken character artwork.
+_worker.js      Cloudflare Pages Advanced Mode backend with the 235-job estimator.
+ken-schema.sql  D1 schema including appointment holds and confirmed bookings.
+
+WHAT THE CUSTOMER FLOW DOES
+---------------------------
+1. Customer talks naturally to Ken.
+2. OpenAI conversation identifies the likely job and asks relevant questions.
+3. The 235-route KPS job system calculates an estimated range.
+4. Customer clicks "See available appointments".
+5. D1 returns genuinely available KPS online slots.
+6. Customer selects one.
+7. The slot is held for 35 minutes.
+8. Customer enters name/mobile/email.
+9. SumUp Hosted Checkout takes the £75 payment.
+10. The return page verifies the SumUp checkout status server-side.
+11. A successful payment changes the held appointment into a CONFIRMED booking.
+12. The customer sees the confirmed appointment.
+
+CURRENT ONLINE SLOT RULES
+-------------------------
+Monday-Friday:
+08:00-10:00
+10:00-12:00
+12:00-14:00
+14:00-16:00
+16:00-17:00
+
+Saturday/Sunday are not offered by the online £75 flow in V2.
+These slot rules can be changed later in _worker.js.
+
+CLOUDFLARE
+----------
+The current GitHub Pages site will NOT run the API.
+
+Create/connect a Cloudflare Pages project from:
+w14nrg/kensington-plumbing-services
+
+The repo root is the Pages output.
+
+_worker.js must be in that output root.
+
+Create a D1 database and bind it as:
+DB
+
+Run ken-schema.sql against that D1 database.
+
+Secrets / variables:
+OPENAI_API_KEY      secret
+OPENAI_MODEL        gpt-5
+SUMUP_API_KEY       secret
+SUMUP_MERCHANT_CODE secret
+SITE_URL            your temporary pages.dev URL while testing, then https://www.kensington.biz
+
+Do not put API keys into GitHub.
+
+IMPORTANT
+---------
+Test on the temporary pages.dev address first.
+Do not move kensington.biz until:
+- Ken conversation works
+- estimate is returned
+- slots load
+- slot reservation works
+- SumUp test/live checkout opens
+- paid checkout confirms a booking

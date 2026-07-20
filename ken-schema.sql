@@ -31,10 +31,25 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS reservations (
+  id TEXT PRIMARY KEY,
+  session_id TEXT,
+  estimate_id TEXT,
+  lead_id TEXT,
+  slot_key TEXT UNIQUE NOT NULL,
+  appointment_date TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'HELD',
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS payments (
   id TEXT PRIMARY KEY,
   lead_id TEXT,
   estimate_id TEXT,
+  reservation_id TEXT,
   checkout_reference TEXT UNIQUE NOT NULL,
   sumup_checkout_id TEXT,
   status TEXT NOT NULL DEFAULT 'PENDING',
@@ -43,13 +58,20 @@ CREATE TABLE IF NOT EXISTS payments (
 
 CREATE TABLE IF NOT EXISTS bookings (
   id TEXT PRIMARY KEY,
-  payment_id TEXT NOT NULL,
-  preferred_date TEXT NOT NULL,
-  preferred_window TEXT NOT NULL,
-  notes TEXT,
+  payment_id TEXT UNIQUE NOT NULL,
+  reservation_id TEXT,
+  lead_id TEXT,
+  slot_key TEXT UNIQUE NOT NULL,
+  appointment_date TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'CONFIRMED',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_ken_messages_session ON ken_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_messages_session ON ken_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_estimates_session ON estimates(session_id);
-CREATE INDEX IF NOT EXISTS idx_payments_reference ON payments(checkout_reference);
+CREATE INDEX IF NOT EXISTS idx_reservation_slot ON reservations(slot_key);
+CREATE INDEX IF NOT EXISTS idx_reservation_status ON reservations(status,expires_at);
+CREATE INDEX IF NOT EXISTS idx_payment_reference ON payments(checkout_reference);
+CREATE INDEX IF NOT EXISTS idx_booking_date ON bookings(appointment_date,start_time);
