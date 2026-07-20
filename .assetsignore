@@ -1,1 +1,14 @@
 _worker.js
+**/node_modules
+**/.git
+wrangler.jsonc
+package.json
+package-lock.json
+bun.lock
+schema.sql
+ken-schema.sql
+README.md
+KEN-*.txt
+READ-ME-FIRST.txt
+dev.vars.example
+.dev.vars*
