@@ -20,17 +20,10 @@
     <div class="site-width site-header-inner">
       <a class="site-brand" href="/">
         <span class="brand-box">KPS</span>
-        <span class="brand-copy">
-          <strong>Kensington Plumbing</strong>
-          <small>SERVICES · WEST LONDON</small>
-        </span>
+        <span class="brand-copy"><strong>Kensington Plumbing</strong><small>SERVICES · WEST LONDON</small></span>
       </a>
       <nav class="site-nav">
-        <a href="/">Home</a>
-        <a href="/service.html">Services</a>
-        <a href="/areas.html">Areas</a>
-        <a href="/about.html">About</a>
-        <a href="/contact.html">Contact</a>
+        <a href="/">Home</a><a href="/service.html">Services</a><a href="/areas.html">Areas</a><a href="/about.html">About</a><a href="/contact.html">Contact</a>
       </nav>
       <a class="site-call" href="tel:+442073713333">Call 020 7371 3333</a>
     </div>
@@ -47,13 +40,11 @@
         </div>
 
         <div class="ken-viewer" id="ken-viewer">
-          <div class="viewer-bathroom"></div>
-          <img id="ken-spin-image" src="/ken-angle-0.jpg" alt="Ken, Kensington Plumbing Services plumbing assistant" draggable="false">
-          <div class="viewer-ring"></div>
+          <div id="ken-large-3d" class="ken-large-3d" aria-label="Interactive 3D Ken"></div>
           <div class="viewer-hint">
             <span>↔ Drag to rotate</span>
             <span>⌕ Scroll to zoom</span>
-            <span>✥ Drag vertically to move</span>
+            <span>✥ Right-drag to pan</span>
           </div>
           <button id="ken-fullscreen" class="fullscreen-btn" type="button">⛶ Fullscreen</button>
         </div>
@@ -63,10 +54,7 @@
     </section>
 
     <section class="ken-categories site-width">
-      <div class="section-heading">
-        <span>WHAT KEN CAN HELP WITH</span>
-        <h2>Start with the problem.</h2>
-      </div>
+      <div class="section-heading"><span>WHAT KEN CAN HELP WITH</span><h2>Start with the problem.</h2></div>
       <div class="category-grid">
         <button data-ken-prompt="I have a leak or pipework problem"><span>💧</span><b>Leaks & Pipework</b></button>
         <button data-ken-prompt="My toilet has a problem"><span>🚽</span><b>Toilets</b></button>
@@ -94,7 +82,9 @@
     </div>
   </footer>
 
-  <script src="/ken-viewer.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="/ken.js" defer></script>
+  <script src="/ken-3d.js" defer></script>
 </body>
 </html>
