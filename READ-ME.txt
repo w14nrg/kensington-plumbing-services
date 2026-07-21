@@ -1,46 +1,21 @@
-KENSINGTON KEN V9.4 — EXACT APPROVED MASCOT
+KENSINGTON KEN — MOBILE DISPLAY HOTFIX
 
-IMPORTANT
-This package does NOT rebuild Ken with primitive 3D spheres/boxes.
-It uses the actual approved Ken artwork generated in the conversation:
-- exact face
-- exact black hair and beard
-- exact navy KPS overalls
-- exact KEN badge
-- exact KPS branding
-- exact boots, tool belt and wrench
+Upload ONLY:
+- ken.css
+- ken-v9.css
 
-The full Ken page uses the approved front / 3-quarter / side / back turnaround artwork as an interactive multi-view turntable.
-That is deliberately used instead of a crude procedural 3D model so the approved face stays intact.
+Same-name files replace automatically.
 
-INTERACTION
-- Drag: spin through the approved turnaround views
-- Mouse wheel: zoom
-- Right-drag or Shift-drag: pan
-- Automatic wave uses the approved wave pose
-- Blink is a small eyelid animation over the approved artwork
+Fixes:
+- On normal site pages the mobile 3D Ken launcher is now contained inside the button instead of protruding over page/greeting text.
+- The mobile launcher and greeting are smaller.
+- The mobile popup uses the available viewport height.
+- On /ken, the 3D viewer is shorter and fully clipped/contained below the intro copy.
+- The small Ken in the /ken chat header is reduced on mobile.
 
-ALSO INCLUDED
-- V9.3 plumbing-only/security lock is preserved
-- Backend health version becomes v9.4.1
-- Ken popup on normal site pages
-- Ken-focused homepage section
-- Estimate disclaimer behind * / How estimates work
+This patch does NOT change Ken's estimator, pricing, security, bookings or SumUp logic.
 
-UPLOAD ALL FILES IN THIS ZIP TO THE GITHUB ROOT.
-Same-name files replace automatically. Do not delete files first.
-
-After Cloudflare deploys:
-https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
-should report version v9.4.1.
-
-Then test:
-https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/ken
-
-
-ESTIMATE DISPLAY FIX
-- Off-topic/security test conversation no longer contaminates job matching.
-- Natural phrases such as "tap is dripping" correctly match the dripping-tap route.
-- If AI understands the fault but returns an unknown job code, Ken falls back to the strongest deterministic priced job.
-- Ken can NEVER say an estimate is shown unless the backend actually returned an estimate object.
-- The live estimate card at the top is restored for recognised plumbing jobs.
+PAYMENT 404:
+No payment-code change is needed for that bug.
+The current SumUp redirect target is www.kensington.biz, but only kensington.biz has been moved to the Worker so far.
+Move www.kensington.biz to the same Worker and the payment return URL will stop landing on the old GitHub Pages 404.

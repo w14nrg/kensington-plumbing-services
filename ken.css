@@ -48,3 +48,62 @@
 .ken-live-estimate.ken-estimate-collapsed .live-estimate-main .live-price{font-size:19px}
 .ken-popup-offer{margin:7px 0 4px;padding:7px 8px}
 .ken-popup-offer strong{font-size:19px}.ken-popup-offer b{font-size:8.5px}.ken-popup-offer small{font-size:7.5px}
+
+
+/* LIVE MOBILE HOTFIX — keep Ken clear of page text */
+@media(max-width:760px){
+  .ken-widget{right:8px!important;bottom:8px!important}
+  .ken-launcher{
+    width:154px!important;
+    height:62px!important;
+    min-height:62px!important;
+    padding:0 9px 0 4px!important;
+    gap:4px!important;
+    border-radius:19px!important;
+    overflow:hidden!important;
+  }
+  #ken-mini-3d{
+    width:56px!important;
+    height:58px!important;
+    flex:0 0 56px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:16px!important;
+  }
+  #ken-mini-3d canvas{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+  }
+  .ken-launcher-copy{min-width:0!important}
+  .ken-launcher-copy b{font-size:15px!important}
+  .ken-launcher-copy small{
+    font-size:8px!important;
+    line-height:1.15!important;
+    max-width:78px!important;
+    white-space:normal!important;
+  }
+  .ken-live-dot{right:8px!important;top:8px!important;width:7px!important;height:7px!important}
+
+  .ken-greeting{
+    right:0!important;
+    bottom:70px!important;
+    width:min(282px,calc(100vw - 16px))!important;
+    padding:12px 13px!important;
+    border-radius:17px 17px 5px 17px!important;
+  }
+  .ken-greeting strong{font-size:16px!important}
+  .ken-greeting span{font-size:11px!important;line-height:1.38!important}
+  .ken-greeting-price{margin-top:7px!important}
+  .ken-greeting-price strong{font-size:20px!important}
+
+  .ken-panel{
+    right:0!important;
+    bottom:70px!important;
+    width:calc(100vw - 16px)!important;
+    height:min(670px,calc(100dvh - 86px))!important;
+    border-radius:18px!important;
+  }
+}

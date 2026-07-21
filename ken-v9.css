@@ -60,3 +60,59 @@
 .ken-book-offer,.ken-popup-offer{display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #ead2b8;border-radius:12px;padding:10px;margin:0 0 11px}.ken-offer-price,.ken-popup-offer>span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}.ken-offer-price del,.ken-popup-offer del{font-size:12px;color:#8f9693}.ken-offer-price strong,.ken-popup-offer strong{font:800 24px/1 Georgia,serif;color:#0b2930}.ken-offer-copy b,.ken-popup-offer b{display:block;font-size:10px;color:#0b2930}.ken-offer-copy small,.ken-popup-offer small{display:block;font-size:8px;color:#6b7c78;margin-top:3px}.ken-popup-offer p{margin:0!important}
 .ken-direct-choice{font-size:9px;line-height:1.45;color:#6e817d;margin:7px 0 10px}.ken-direct-choice a{color:#8d552f;font-weight:900;text-decoration:none}
 .ken-slot-offer{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-top:10px;padding:9px 10px;background:#fff7ed;border:1px solid #ead2b8;border-radius:10px}.ken-slot-offer del{font-size:10px;color:#8f9693}.ken-slot-offer strong{font-size:13px;color:#0b2930}.ken-slot-offer span{font-size:8px;color:#6e817d}
+
+
+/* LIVE MOBILE HOTFIX — dedicated Ken page */
+@media(max-width:600px){
+  .site-width{width:calc(100% - 20px)!important}
+  .ken-workspace{padding-top:16px!important;gap:12px!important}
+  .ken-view-panel{padding:12px!important}
+  .ken-view-copy{
+    position:relative!important;
+    z-index:5!important;
+    padding:4px 4px 12px!important;
+  }
+  .ken-view-copy h1{font-size:43px!important;line-height:1!important;margin-top:7px!important}
+  .ken-view-copy h2{font-size:17px!important;line-height:1.15!important}
+  .ken-view-copy p{font-size:11px!important;line-height:1.45!important}
+  .ken-save-banner{position:relative!important;z-index:5!important}
+  .ken-direct-links{position:relative!important;z-index:5!important}
+
+  .ken-viewer{
+    height:360px!important;
+    min-height:360px!important;
+    overflow:hidden!important;
+    isolation:isolate!important;
+  }
+  .ken-large-3d{
+    position:absolute!important;
+    inset:0!important;
+    overflow:hidden!important;
+    z-index:1!important;
+  }
+  .ken-large-3d canvas{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+  }
+  .interactive-badge,.fullscreen-btn,.viewer-hint{z-index:6!important}
+
+  .ken-mini-avatar{
+    width:42px!important;
+    height:42px!important;
+    flex:0 0 42px!important;
+    overflow:hidden!important;
+  }
+  .ken-mini-avatar canvas{
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+  }
+  .ken-chat-head{padding:10px 11px!important;gap:9px!important}
+  .ken-chat-title strong{font-size:15px!important}
+  .ken-chat-title span{font-size:9px!important}
+  .online-pill{padding:5px 7px!important;font-size:8px!important}
+}
