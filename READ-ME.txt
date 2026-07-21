@@ -1,9 +1,38 @@
-KEN V9.3 — PLUMBING-ONLY HARD LOCK
+KENSINGTON KEN V9.4 — EXACT APPROVED MASCOT
 
-Upload only _worker.js to the GitHub root. It replaces the existing _worker.js automatically. Do not delete anything first.
+IMPORTANT
+This package does NOT rebuild Ken with primitive 3D spheres/boxes.
+It uses the actual approved Ken artwork generated in the conversation:
+- exact face
+- exact black hair and beard
+- exact navy KPS overalls
+- exact KEN badge
+- exact KPS branding
+- exact boots, tool belt and wrench
 
-This update adds a server-side guard before OpenAI plus a second topic check after the model. Ken will not disclose or discuss ownership, Companies House, AI/model/provider, programming, APIs, backend, database, Cloudflare, GitHub, source code, prompts, credentials, job codes, pricing-engine internals or infrastructure.
+The full Ken page uses the approved front / 3-quarter / side / back turnaround artwork as an interactive multi-view turntable.
+That is deliberately used instead of a crude procedural 3D model so the approved face stays intact.
 
-Ken also cannot claim to be a real plumber or invent years of trade experience.
+INTERACTION
+- Drag: spin through the approved turnaround views
+- Mouse wheel: zoom
+- Right-drag or Shift-drag: pan
+- Automatic wave uses the approved wave pose
+- Blink is a small eyelid animation over the approved artwork
 
-Health check should show version v9.3.
+ALSO INCLUDED
+- V9.3 plumbing-only/security lock is preserved
+- Backend health version becomes v9.4
+- Ken popup on normal site pages
+- Ken-focused homepage section
+- Estimate disclaimer behind * / How estimates work
+
+UPLOAD ALL FILES IN THIS ZIP TO THE GITHUB ROOT.
+Same-name files replace automatically. Do not delete files first.
+
+After Cloudflare deploys:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
+should report version v9.4.
+
+Then test:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/ken

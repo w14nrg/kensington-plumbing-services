@@ -678,7 +678,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v9.3");
+  headers.set("x-ken-version","v9.4");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -694,7 +694,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.3",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.4",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }

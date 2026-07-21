@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ken | Plumbing Estimator & Online Booking | Kensington Plumbing Services</title>
   <meta name="description" content="Chat with Ken from Kensington Plumbing Services. Describe your plumbing problem, get an estimated repair range and book a local plumber online.">
-  <link rel="canonical" href="https://www.kensington.biz/ken.html">
+  <link rel="canonical" href="https://www.kensington.biz/ken">
   <link rel="stylesheet" href="/ken-v9.css">
 </head>
 <body class="ken-page">
@@ -36,11 +36,11 @@
           <div class="eyebrow">YOUR KENSINGTON PLUMBING COMPANION</div>
           <h1>KEN</h1>
           <h2>Chat. Diagnose. Estimate. Book.</h2>
-          <p>Tell Ken what’s gone wrong in your own words. He’ll help work out the likely job, give you an estimated price range and help you book a plumber.</p>
+          <p>Tell Ken what’s gone wrong in your own words. He’ll help work out the likely job, build a live estimated price range and help you book a plumber.</p>
         </div>
         <div class="ken-viewer" id="ken-viewer">
-          <div class="interactive-badge"><span></span> LIVE 3D KEN</div>
-          <div id="ken-large-3d" class="ken-large-3d" aria-label="Interactive 3D Ken"></div>
+          <div class="interactive-badge"><span></span> LIVE INTERACTIVE KEN</div>
+          <div id="ken-large-3d" class="ken-large-3d" data-ken-mascot="turntable" aria-label="Interactive Ken mascot"></div>
           <div class="viewer-hint">
             <span>↔ Drag to rotate</span>
             <span>⌕ Scroll to zoom</span>
@@ -82,9 +82,7 @@
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="/ken-v9.js" defer></script>
-  <script src="/ken-v8-3d.js" defer></script>
+  <script src="/ken-mascot.js" defer></script>
 </body>
 </html>
