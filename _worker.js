@@ -8,13 +8,26 @@ const norm=s=>clean(s).toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g,
 
 function scoreJobs(text){
   const q=norm(text);
+  const qWords=new Set(q.split(" ").filter(Boolean));
   return JOBS.map(job=>{
     let score=0;
     for(const kw of job.keywords){
       const k=norm(kw);
       if(!k)continue;
-      if(q.includes(k))score+=12+k.split(" ").length*3;
-      else for(const word of k.split(" ")) if(word.length>=5&&q.includes(word))score+=1;
+      const words=k.split(" ").filter(Boolean);
+      if(q.includes(k)){
+        score+=12+words.length*3;
+        continue;
+      }
+      // Flexible matching: "tap is dripping" must match "dripping tap",
+      // and similar natural word-order variations should still find the right job.
+      const meaningful=words.filter(w=>w.length>=3);
+      const matched=meaningful.filter(w=>qWords.has(w));
+      if(meaningful.length>=2 && matched.length===meaningful.length){
+        score+=8+matched.length*3;
+      }else{
+        score+=matched.length;
+      }
     }
     return {job,score};
   }).sort((a,b)=>b.score-a.score);
@@ -349,13 +362,38 @@ async function handleKen(request,env){
 
   await saveMessage(env,sessionId,"user",message);
 
-  const fullText=[...history.map(x=>x.content||""),message].join(" ");
-  const ranked=scoreJobs(fullText);
+  // Do not let old off-topic/security-test chat poison plumbing job matching.
+  // For pricing we score CUSTOMER wording only, not Ken's own repeated plumbing wording.
+  const userHistory=history.filter(x=>x&&x.role==="user").slice(-12);
+  const scoringText=[...userHistory.map(x=>x.content||""),message].join(" ");
+  const ranked=scoreJobs(scoringText);
+  const bestDeterministic=ranked.find(x=>x.job.code!=="unknown_plumbing"&&x.score>=10)||null;
   const candidates=ranked.filter(x=>x.score>0).slice(0,15);
   if(!candidates.find(x=>x.job.code==="unknown_plumbing")) candidates.push({job:findJob("unknown_plumbing"),score:0});
 
-  let turn=await openAITurn(env,message,history,incomingState,candidates);
-  if(!turn)turn=fallbackTurn(message,history,incomingState);
+  // If the user previously tested Ken with owner/API/backend questions, cut that old
+  // locked section out of the model context once a real plumbing conversation starts.
+  let cleanHistory=history.slice(-12);
+  for(let i=cleanHistory.length-1;i>=0;i--){
+    if(cleanHistory[i]?.role==="assistant"&&cleanHistory[i]?.content===KEN_LOCK_REPLY){
+      cleanHistory=cleanHistory.slice(i+1);
+      break;
+    }
+  }
+
+  let turn=await openAITurn(env,message,cleanHistory,incomingState,candidates);
+  if(!turn)turn=fallbackTurn(message,cleanHistory,incomingState);
+
+  // The language model can describe the likely fault correctly yet occasionally return
+  // unknown_plumbing as its code. Never let that suppress a deterministic estimate when
+  // the customer's wording clearly matches one of our 235 priced jobs.
+  const aiCode=clean(turn?.selected_job_code,120);
+  if((!aiCode||aiCode==="unknown_plumbing"||findJob(aiCode).code==="unknown_plumbing")&&bestDeterministic){
+    turn.selected_job_code=bestDeterministic.job.code;
+    if(!turn.match_confidence||turn.match_confidence==="low"){
+      turn.match_confidence=bestDeterministic.score>=24?"high":"medium";
+    }
+  }
 
   if(turn&&turn.topic_allowed===false){
     await saveMessage(env,sessionId,"assistant",KEN_LOCK_REPLY);
@@ -375,7 +413,8 @@ async function handleKen(request,env){
   if(signals.wantsEstimate){
     turn.ready_to_estimate=true;
     turn.ready=true;
-    turn.reply="Your current live estimate is shown below. You can continue to booking now, or add more information if you want me to refine it further.";
+    // Do not claim an estimate is visible yet. The server will only say that AFTER
+    // a priced job has actually been calculated below.
     turn.quick_replies=[];
     turn.quickReplies=[];
   }
@@ -384,7 +423,13 @@ async function handleKen(request,env){
   const state={
     ...incomingState,
     turnCount:(Number(incomingState.turnCount)||0)+1,
-    jobCode:turn.selected_job_code||turn.state?.jobCode||incomingState.jobCode||"unknown_plumbing",
+    jobCode:(
+      (turn.selected_job_code&&findJob(turn.selected_job_code).code!=="unknown_plumbing"&&turn.selected_job_code) ||
+      (turn.state?.jobCode&&findJob(turn.state.jobCode).code!=="unknown_plumbing"&&turn.state.jobCode) ||
+      (incomingState.jobCode&&incomingState.jobCode!=="unknown_plumbing"&&incomingState.jobCode) ||
+      bestDeterministic?.job.code ||
+      "unknown_plumbing"
+    ),
     matchConfidence:turn.match_confidence||turn.state?.matchConfidence||incomingState.matchConfidence||"low",
     postcode:extracted.postcode||turn.state?.postcode||incomingState.postcode||likelyPostcode(message)||"",
     access:extracted.access&&extracted.access!=="unknown"?extracted.access:(turn.state?.access||incomingState.access||"unknown"),
@@ -449,8 +494,22 @@ async function handleKen(request,env){
   }
 
   let reply=turn.reply||"Thanks — tell me a little more about what’s happening.";
-  if(estimate?.canBook&&!signals.wantsEstimate&&!incomingState.estimateReady){
-    reply="Your live estimate is ready below. You can continue to booking now, or add another useful detail if you want me to refine the range.";
+
+  if(estimate){
+    if(signals.wantsEstimate){
+      reply="Your current live estimate is shown below. You can continue to booking now, or add more information if you want me to refine it further.";
+      estimate.showNow=true;
+    }else if(estimate.canBook&&!incomingState.estimateReady){
+      reply="Your live estimate is ready below. You can continue to booking now, or add another useful detail if you want me to refine the range.";
+      estimate.showNow=true;
+    }
+  }else{
+    // A model response is never allowed to pretend a price exists when the pricing
+    // engine has not identified a priced route.
+    const falselyClaimsEstimate=/\b(?:estimate|price|range)\b[\s\S]{0,45}\b(?:shown|below|ready)\b/i.test(reply);
+    if(signals.wantsEstimate||turn.ready_to_estimate||falselyClaimsEstimate){
+      reply="I haven’t got a reliable repair range to show yet. Give me one more plumbing detail about exactly what is dripping, leaking, blocked or not working and I’ll price the closest repair route.";
+    }
   }
   await saveMessage(env,sessionId,"assistant",reply);
 
@@ -678,7 +737,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v9.4");
+  headers.set("x-ken-version","v9.4.1");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -694,7 +753,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.4",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.4.1",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }

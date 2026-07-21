@@ -22,7 +22,7 @@ INTERACTION
 
 ALSO INCLUDED
 - V9.3 plumbing-only/security lock is preserved
-- Backend health version becomes v9.4
+- Backend health version becomes v9.4.1
 - Ken popup on normal site pages
 - Ken-focused homepage section
 - Estimate disclaimer behind * / How estimates work
@@ -32,7 +32,15 @@ Same-name files replace automatically. Do not delete files first.
 
 After Cloudflare deploys:
 https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
-should report version v9.4.
+should report version v9.4.1.
 
 Then test:
 https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/ken
+
+
+ESTIMATE DISPLAY FIX
+- Off-topic/security test conversation no longer contaminates job matching.
+- Natural phrases such as "tap is dripping" correctly match the dripping-tap route.
+- If AI understands the fault but returns an unknown job code, Ken falls back to the strongest deterministic priced job.
+- Ken can NEVER say an estimate is shown unless the backend actually returned an estimate object.
+- The live estimate card at the top is restored for recognised plumbing jobs.
