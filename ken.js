@@ -60,20 +60,32 @@ function bookingChoiceHtml(){
   return `<div class="ken-popup-offer"><span><del>£85</del><strong>£75</strong></span><p><b>Book with Ken & save £10</b><small>First visit & diagnosis</small></p></div>
   <div class="ken-direct-choice">Or book directly: <a href="tel:+442073713333">Call</a> · <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp</a></div>`;
 }
-function renderEstimate(e){
+function setEstimateCollapsed(collapsed){
+  if(!state.estimate||estimateBox.hidden)return;
+  estimateBox.classList.toggle("ken-estimate-collapsed",Boolean(collapsed));
+  const b=estimateBox.querySelector("[data-estimate-toggle]");
+  if(b)b.textContent=collapsed?"View estimate":"Minimise";
+}
+
+function renderEstimate(e,expand=false){
   state.estimate=e;save();progress(e.confidenceScore||30);estimateBox.hidden=false;
   if(e.mode==="diagnosis"){
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>DIAGNOSIS REQUIRED*</span><strong>${esc(e.confidence||"Building")}</strong></div><div class="live-estimate-main"><div><small>Likely attendance</small><b>${esc(e.jobName)}</b></div><div><small>Attendance & diagnosis</small><b class="live-price">£75</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>${esc(e.summary||"The eventual repair price will be confirmed once the cause is identified.")}</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>DIAGNOSIS REQUIRED*</span><div><strong>${esc(e.confidence||"Building")}</strong><button type="button" class="ken-estimate-toggle" data-estimate-toggle>Minimise</button></div></div><div class="live-estimate-main"><div><small>Likely attendance</small><b>${esc(e.jobName)}</b></div><div><small>Attendance & diagnosis</small><b class="live-price">£75</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>${esc(e.summary||"The eventual repair price will be confirmed once the cause is identified.")}</p>${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }else if(e.mode==="budget"){
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>BUDGET GUIDE*</span><strong>Site quote required</strong></div><div class="live-estimate-main"><div><small>Likely work</small><b>${esc(e.jobName)}</b></div><div><small>Broad guide</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(72,e.confidenceScore||20))}%"></span></div><p>Larger/project work needs an on-site assessment before a full quotation is confirmed.</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>BUDGET GUIDE*</span><div><strong>Site quote required</strong><button type="button" class="ken-estimate-toggle" data-estimate-toggle>Minimise</button></div></div><div class="live-estimate-main"><div><small>Likely work</small><b>${esc(e.jobName)}</b></div><div><small>Broad guide</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(72,e.confidenceScore||20))}%"></span></div><p>Larger/project work needs an on-site assessment before a full quotation is confirmed.</p>${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }else{
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>LIVE ESTIMATE*</span><strong>${esc(e.confidence||"Low")} confidence</strong></div><div class="live-estimate-main"><div><small>Likely job</small><b>${esc(e.jobName)}</b></div><div><small>Current range</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>Book now, or keep chatting. Useful extra information can narrow the range where it genuinely helps.</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>LIVE ESTIMATE*</span><div><strong>${esc(e.confidence||"Low")} confidence</strong><button type="button" class="ken-estimate-toggle" data-estimate-toggle>Minimise</button></div></div><div class="live-estimate-main"><div><small>Likely job</small><b>${esc(e.jobName)}</b></div><div><small>Current range</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>Book now, or keep chatting. Useful extra information can narrow the range where it genuinely helps.</p>${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }
   estimateBox.querySelector("[data-book]")?.addEventListener("click",()=>location.href="/ken");
+  estimateBox.querySelector("[data-estimate-toggle]")?.addEventListener("click",e=>{
+    e.stopPropagation();
+    setEstimateCollapsed(!estimateBox.classList.contains("ken-estimate-collapsed"));
+  });
+  setEstimateCollapsed(!expand);
 }
 function open(){panel.classList.add("open");widget.querySelector(".ken-greeting").classList.add("hide");setTimeout(()=>input.focus(),100)}
 function close(){panel.classList.remove("open")}
-async function send(text){const message=String(text||"").trim();if(!message)return;open();add(message,"user");setQuick([]);typing(true);try{const data=await api("/api/ken",{method:"POST",body:JSON.stringify({sessionId:state.sessionId,message,history:state.conversation.slice(0,-1),state:state.serverState,page:location.pathname})});typing(false);if(data.resetIssue)clearEstimateForNewIssue();state.sessionId=data.sessionId||state.sessionId;state.serverState=data.state||state.serverState;if(data.reply)add(data.reply,"bot");if(data.quickReplies)setQuick(data.quickReplies);if(data.estimate)renderEstimate(data.estimate);else if(!data.topicLocked)progress(data.progress||20);save()}catch(e){typing(false);add("I’m having trouble connecting right now. Please try again in a moment, or call 020 7371 3333.","bot")}}
+async function send(text){const message=String(text||"").trim();if(!message)return;open();if(state.estimate)setEstimateCollapsed(true);add(message,"user");setQuick([]);typing(true);try{const data=await api("/api/ken",{method:"POST",body:JSON.stringify({sessionId:state.sessionId,message,history:state.conversation.slice(0,-1),state:state.serverState,page:location.pathname})});typing(false);if(data.resetIssue)clearEstimateForNewIssue();state.sessionId=data.sessionId||state.sessionId;state.serverState=data.state||state.serverState;if(data.reply)add(data.reply,"bot");if(data.quickReplies)setQuick(data.quickReplies);if(data.estimate)renderEstimate(data.estimate,Boolean(data.showEstimateNow));else if(!data.topicLocked)progress(data.progress||20);save()}catch(e){typing(false);add("I’m having trouble connecting right now. Please try again in a moment, or call 020 7371 3333.","bot")}}
 
 widget.querySelector(".ken-launcher").addEventListener("click",open);widget.querySelector(".ken-close").addEventListener("click",close);
 widget.querySelector(".ken-send").addEventListener("click",()=>{const t=input.value.trim();if(t){input.value="";send(t)}});input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();widget.querySelector(".ken-send").click()}});
@@ -81,7 +93,7 @@ disclaimer.addEventListener("click",e=>{if(e.target===disclaimer||e.target.close
 
 if(state.conversation.length)state.conversation.forEach(m=>add(m.content,m.role==="user"?"user":"bot",false));
 else add("Hi, I’m Ken. Tell me what’s gone wrong with your plumbing. I’ll ask a couple of useful questions, build a live estimate where possible, and help you book in.","bot");
-if(state.estimate)renderEstimate(state.estimate);else progress(state.serverState?.confidenceScore||15);
+if(state.estimate)renderEstimate(state.estimate,false);else progress(state.serverState?.confidenceScore||15);
 setQuick(["I have a leak","My toilet has a problem","I have a tap or shower problem","I have a radiator or heating problem","I have a blocked sink or drain"]);
 load3D();
 })();

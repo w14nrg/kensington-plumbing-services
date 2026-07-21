@@ -956,7 +956,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","go-live-final");
+  headers.set("x-ken-version","go-live-final-ui");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -976,7 +976,7 @@ export default{
       if(url.pathname==="/api/health")return json({
         ok:true,
         service:"Ken",
-        version:"go-live-final",
+        version:"go-live-final-ui",
         jobs:JOBS.length,
         openai:Boolean(env.OPENAI_API_KEY),
         database:Boolean(env.DB),

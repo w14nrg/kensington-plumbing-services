@@ -1,0 +1,19 @@
+KENSINGTON KEN — FINAL UI FIX
+
+Upload ONLY these 3 files to the GitHub root:
+- _worker.js
+- ken.js
+- ken.css
+
+Fixes the exact screenshot problem:
+- Removes the accidental 3 duplicate £75 offer cards. There is now ONE offer only.
+- Expanded estimate is capped so it cannot swallow the entire chat window.
+- As soon as the customer continues chatting, the estimate automatically collapses to a compact summary at the top.
+- The compact summary still shows the job and current price range.
+- Click “View estimate” to expand it again.
+- When the range is refined by more information it stays compact, so the customer can keep reading the conversation.
+
+No pricing, booking, security, avatar or SumUp logic is changed by this patch.
+
+After deployment /api/health should show:
+"version":"go-live-final-ui"

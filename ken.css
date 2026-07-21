@@ -30,3 +30,21 @@
 .ken-greeting span b{color:#8d552f}
 .ken-foot-direct a{color:#8a572f;font-weight:800;text-decoration:none}
 .ken-popup-offer{display:flex;align-items:center;gap:9px;background:#fff7ed;border:1px solid #ead2b8;border-radius:11px;padding:9px;margin:9px 0 5px}.ken-popup-offer>span{display:flex;align-items:baseline;gap:5px}.ken-popup-offer del{font-size:10px;color:#8f9693}.ken-popup-offer strong{font:800 21px/1 Georgia,serif;color:#0b2930}.ken-popup-offer p{margin:0!important}.ken-popup-offer b{display:block;font-size:9px;color:#0b2930}.ken-popup-offer small{display:block;font-size:8px;color:#6e817d;margin-top:2px}.ken-direct-choice{font-size:9px;color:#6e817d;margin:5px 0 8px}.ken-direct-choice a{color:#8a572f;font-weight:900;text-decoration:none}
+
+
+/* FINAL UI FIX — keep the conversation visible */
+.ken-live-estimate{max-height:245px;overflow:auto;flex:0 0 auto;transition:max-height .18s ease,padding .18s ease}
+.live-estimate-top>div{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.ken-estimate-toggle{border:0;background:transparent;padding:0;color:#8a572f;text-decoration:underline;font-size:8px;font-weight:800;cursor:pointer}
+.ken-live-estimate.ken-estimate-collapsed{max-height:92px;overflow:hidden;padding-top:8px;padding-bottom:8px}
+.ken-live-estimate.ken-estimate-collapsed .confidence-meter,
+.ken-live-estimate.ken-estimate-collapsed>p,
+.ken-live-estimate.ken-estimate-collapsed .ken-popup-offer,
+.ken-live-estimate.ken-estimate-collapsed .ken-direct-choice,
+.ken-live-estimate.ken-estimate-collapsed .ken-action-btn{display:none!important}
+.ken-live-estimate.ken-estimate-collapsed .live-estimate-main{margin-top:5px}
+.ken-live-estimate.ken-estimate-collapsed .live-estimate-main small{font-size:8px}
+.ken-live-estimate.ken-estimate-collapsed .live-estimate-main b{font-size:11px}
+.ken-live-estimate.ken-estimate-collapsed .live-estimate-main .live-price{font-size:19px}
+.ken-popup-offer{margin:7px 0 4px;padding:7px 8px}
+.ken-popup-offer strong{font-size:19px}.ken-popup-offer b{font-size:8.5px}.ken-popup-offer small{font-size:7.5px}
