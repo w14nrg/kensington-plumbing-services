@@ -1,8 +1,21 @@
-KEN V9.1 DOUBLE-SCRIPT FIX
+KENSINGTON KEN V9.2 — CONVERSATION + PRICE FIX
 
-Upload only _worker.js to the GitHub repository root and replace the current file.
+Upload these TWO files to the GitHub repository root:
 
-This stops the Worker injecting the old /ken.js and /ken.css over the dedicated V9 Ken page.
-The V9 confidence meter, progressive estimate, customer details and 3-hour booking flow can then load correctly.
+- _worker.js
+- ken-v9.js
 
-After Cloudflare redeploys, /api/health will include: "version":"v9.1"
+They replace the existing files automatically. Do not delete anything first.
+
+Fixes:
+- an explicit request for the estimate immediately shows it; Ken cannot keep promising to send it
+- estimate is inserted inside the chat as well as the live panel, so it cannot be missed while scrolled down
+- maximum of roughly three useful diagnostic questions before a workable estimate
+- shorter replies and no repeated scope/diagnosis
+- concealed WC pricing is more realistic and no longer assumes major opening-up just because there is no separate hatch
+- wall flush plate is treated as the normal service-access point
+- running-WC estimate starts lower and narrows more strongly as confidence improves
+- “not sure” keeps the estimate wider without trapping the user in repeated questions
+- health endpoint version becomes v9.2
+
+The SumUp secrets are still the next step after this conversation/estimate test passes.

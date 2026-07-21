@@ -26,41 +26,60 @@ function findJob(code){
 
 function calculateEstimate(job,state){
   let min=job.min,max=job.max;
-  if(state.access==="awkward"){min+=35;max+=100}
-  if(state.access==="concealed"){min+=90;max+=260}
+  const internalWcCodes=new Set(["wc_running","wc_not_filling","wc_slow_fill","wc_not_flushing","wc_weak_flush","wc_double_flush","wc_inlet_valve","wc_flush_valve","wc_siphon"]);
+
+  // A running WC is usually a straightforward valve/seal repair. A concealed cistern
+  // costs more, but a wall flush plate is normally the service-access point and does
+  // not automatically mean destructive opening-up work.
+  if(job.code==="wc_running"){
+    min=95;max=175;
+    if(state.access==="concealed"||state.concealedWc){min=125;max=240}
+    if(state.noAccessHatch&&(state.access==="concealed"||state.concealedWc))max=Math.max(max,245);
+  }else if(state.access==="awkward"){
+    min+=25;max+=75;
+  }else if(state.access==="concealed"){
+    if(internalWcCodes.has(job.code)){min+=30;max+=70}
+    else{min+=60;max+=170}
+  }
+
+  if(state.makingGood==="included"){
+    min+=100;max+=250;
+  }
+
   const qty=Math.max(1,Math.min(10,Number(state.quantity)||1));
-  if(qty>1){min+=Math.round(job.min*0.55*(qty-1));max+=Math.round(job.max*0.65*(qty-1))}
+  if(qty>1){min+=Math.round(job.min*0.50*(qty-1));max+=Math.round(job.max*0.60*(qty-1))}
   if(state.outOfHours==="yes"){min+=50;max+=90}
   min=Math.max(75,Math.round(min/5)*5);
-  max=Math.max(min,Math.round(max/5)*5);
+  max=Math.max(min+20,Math.round(max/5)*5);
   return{min,max};
 }
 
 function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
 function estimateConfidence(state,modelScore=0){
-  let heuristic=state.matchConfidence==="high"?52:state.matchConfidence==="medium"?38:24;
-  if(clean(state.symptomDetail,300).length>=8)heuristic+=12;
-  if(clean(state.fixtureDetail,300).length>=4)heuristic+=8;
-  if(clean(state.locationDetail,300).length>=4)heuristic+=6;
-  if(clean(state.causeHint,300).length>=4)heuristic+=7;
-  if(state.access&&state.access!=="unknown")heuristic+=7;
-  if(clean(state.problemSummary,800).length>=30)heuristic+=6;
-  if((Number(state.turnCount)||0)>=2)heuristic+=4;
-  if((Number(state.turnCount)||0)>=3)heuristic+=4;
-  const model=clamp(Number(modelScore)||heuristic,10,95);
-  return clamp(Math.round(heuristic*.45+model*.55),15,95);
+  let heuristic=state.matchConfidence==="high"?45:state.matchConfidence==="medium"?32:20;
+  if(clean(state.symptomDetail,300).length>=8)heuristic+=11;
+  if(clean(state.fixtureDetail,300).length>=4)heuristic+=7;
+  if(clean(state.locationDetail,300).length>=4)heuristic+=5;
+  if(clean(state.causeHint,300).length>=4)heuristic+=6;
+  if(state.access&&state.access!=="unknown")heuristic+=6;
+  if(clean(state.problemSummary,800).length>=30)heuristic+=5;
+  if((Number(state.turnCount)||0)>=2)heuristic+=3;
+  if((Number(state.turnCount)||0)>=3)heuristic+=3;
+  heuristic-=Math.min(18,(Number(state.unknownCount)||0)*6);
+  const model=clamp(Number(modelScore)||heuristic,10,92);
+  return clamp(Math.round(heuristic*.55+model*.45),15,92);
 }
 
 function progressiveEstimate(job,state,confidenceScore){
   const base=calculateEstimate(job,state);
   const centre=(base.min+base.max)/2;
   const baseWidth=Math.max(30,base.max-base.min);
-  let factor=1.7;
-  if(confidenceScore>=35)factor=1.45;
-  if(confidenceScore>=50)factor=1.22;
-  if(confidenceScore>=65)factor=1.0;
-  if(confidenceScore>=78)factor=.82;
-  if(confidenceScore>=90)factor=.68;
+  let factor=1.48;
+  if(confidenceScore>=35)factor=1.28;
+  if(confidenceScore>=50)factor=1.10;
+  if(confidenceScore>=65)factor=.92;
+  if(confidenceScore>=78)factor=.72;
+  if(confidenceScore>=90)factor=.58;
   const width=Math.max(35,baseWidth*factor);
   let min=Math.max(75,Math.round((centre-width/2)/5)*5);
   let max=Math.max(min+20,Math.round((centre+width/2)/5)*5);
@@ -71,6 +90,23 @@ function progressiveEstimate(job,state,confidenceScore){
 function likelyPostcode(text){
   const m=String(text||"").toUpperCase().match(/\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/);
   return m?m[1].replace(/\s+/," "):"";
+}
+
+function conversationSignals(message,incomingState={}){
+  const lower=String(message||"").toLowerCase();
+  const directEstimate=/\b(estimate|estimated price|quote|price|cost|how much|send (?:me )?(?:the )?estimate|show (?:me )?(?:the )?estimate|view (?:my )?estimate|go ahead and (?:send|show)|give me (?:the )?(?:price|estimate))\b/i.test(lower);
+  const frustratedEstimate=Boolean(incomingState.estimateReady)&&/where (?:is|the)|how many times|just send|show it|send it|ffs|fucking estimate/i.test(lower);
+  const uncertain=/\b(not sure|not too sure|don'?t know|dont know|no idea|can'?t tell|cannot tell|unsure)\b/i.test(lower);
+  const usefulSpecific=!uncertain&&clean(message,500).length>=5;
+  return{
+    wantsEstimate:directEstimate||frustratedEstimate,
+    uncertain,
+    usefulSpecific,
+    concealedWc:/\b(flat plate|flush plate|concealed cistern|in[- ]?wall cistern|back[- ]?to[- ]?wall toilet)\b/i.test(lower),
+    noAccessHatch:/\b(no access hatch|no hatch|fully boxed(?: in)?|completely boxed(?: in)?)\b/i.test(lower),
+    makingGoodExcluded:/\b(i(?:'|’)ll handle|i will handle|handle making[- ]?good myself|making[- ]?good excluded|exclude making[- ]?good|no making[- ]?good)\b/i.test(lower),
+    makingGoodIncluded:/\b(include making[- ]?good|you handle making[- ]?good|include re[- ]?tiling|include patching|make good afterwards)\b/i.test(lower)
+  };
 }
 
 function fallbackTurn(message,history,state){
@@ -152,20 +188,22 @@ Your job in this conversation is ONLY to understand the plumbing/heating/small-d
 
 Rules:
 1. Read everything the customer has already said. Never ask them to repeat information they already gave you.
-2. Ask only ONE genuinely useful follow-up question at a time, specific to their exact problem.
+2. Ask only ONE genuinely useful follow-up question at a time, specific to their exact problem. Ask no more than THREE diagnostic questions in total before presenting a workable estimate.
 3. Do NOT ask for their name, phone number, address or postcode. The website collects customer details after the estimate. If they volunteer a postcode, extract it, but do not ask for it.
 4. Do NOT ask about access unless access can materially change the price for that exact problem. Normal visible toilets, taps and radiators should be assumed easy access unless the customer says they are concealed, boxed in, back-to-wall or difficult to reach.
 5. If the customer says “I don't know”, “not sure” or cannot answer a technical question, accept that naturally. Do not keep asking the same thing. Continue with a wider, lower-confidence estimate.
 6. The more specific useful information you obtain, the higher information_confidence should become. More confidence lets the server narrow the price range. Missing/unknown information must keep confidence lower and the range wider.
 7. information_confidence should normally start around 20-40 after a vague first message, move to 45-70 after one or two useful answers, and reach 75-95 only when the likely fault and scope are genuinely quite clear.
-8. Set ready_to_estimate=true when you can identify a sensible likely repair route. This does NOT mean certainty. After roughly 1-3 useful questions, you should normally be able to give an estimate even if some facts remain unknown.
-9. Keep the conversation moving. Do not interrogate the customer just to raise confidence.
-10. Do not invent prices. The server calculates all prices separately.
+8. Set ready_to_estimate=true when you can identify a sensible likely repair route. This does NOT mean certainty. After roughly 1-3 useful questions, present the estimate even if some facts remain unknown. If the customer asks for the estimate, price, quote, cost, says “go ahead”, or shows frustration about waiting, set ready_to_estimate=true immediately and DO NOT ask another question.
+9. Keep the conversation moving. Do not interrogate the customer just to raise confidence. Replies must be concise: normally no more than 45 words.
+10. Do not invent prices. The server calculates all prices separately. Never say “I’ll send the estimate”, “I’ll issue it”, or “I can give you an estimate”. The website displays it automatically. When ready, say simply that the live estimate is shown and they can continue to booking or add more information.
 11. Do not claim a certain diagnosis from chat alone. Say “likely”, “sounds like”, or similar.
 12. If there is an active water leak, give concise safe isolation advice when appropriate.
 13. For suspected gas leak/smell: tell them to leave the area, avoid electrical switches and call National Gas Emergency Service 0800 111 999. Set safety and do not estimate.
 14. Internal gas-appliance work requires an appropriately qualified engineer.
 15. selected_job_code must be one code from the candidate list. Use unknown_plumbing only if none reasonably fits.
+16. For a concealed WC, the wall flush plate is normally the service-access point. Do not assume tiles or boxing must be opened merely because there is no separate hatch. Opening-up is only a possible exception if the mechanism cannot be serviced through the flush-plate opening.
+17. Do not repeat the diagnosis or scope in several consecutive replies. State it once, then move on.
 
 Extract and continuously refine:
 - symptom_detail: what is actually happening
@@ -233,6 +271,7 @@ async function handleKen(request,env){
   const sessionId=clean(data.sessionId,100)||uid("session");
   const history=Array.isArray(data.history)?data.history:[];
   const incomingState=data.state&&typeof data.state==="object"?data.state:{};
+  const signals=conversationSignals(message,incomingState);
 
   await saveMessage(env,sessionId,"user",message);
 
@@ -243,6 +282,13 @@ async function handleKen(request,env){
 
   let turn=await openAITurn(env,message,history,incomingState,candidates);
   if(!turn)turn=fallbackTurn(message,history,incomingState);
+  if(signals.wantsEstimate){
+    turn.ready_to_estimate=true;
+    turn.ready=true;
+    turn.reply="Your current live estimate is shown below. You can continue to booking now, or add more information if you want me to refine it further.";
+    turn.quick_replies=[];
+    turn.quickReplies=[];
+  }
 
   const extracted=turn.extracted||{};
   const state={
@@ -259,7 +305,11 @@ async function handleKen(request,env){
     symptomDetail:extracted.symptom_detail||incomingState.symptomDetail||"",
     fixtureDetail:extracted.fixture_detail||incomingState.fixtureDetail||"",
     locationDetail:extracted.location_detail||incomingState.locationDetail||"",
-    causeHint:extracted.cause_hint||incomingState.causeHint||""
+    causeHint:extracted.cause_hint||incomingState.causeHint||"",
+    unknownCount:clamp((Number(incomingState.unknownCount)||0)+(signals.uncertain?1:0)-(signals.usefulSpecific?1:0),0,3),
+    concealedWc:Boolean(incomingState.concealedWc||signals.concealedWc),
+    noAccessHatch:Boolean(incomingState.noAccessHatch||signals.noAccessHatch),
+    makingGood:signals.makingGoodExcluded?"excluded":signals.makingGoodIncluded?"included":(incomingState.makingGood||"unknown")
   };
 
   if(state.jobCode==="gas_smell"){
@@ -274,7 +324,9 @@ async function handleKen(request,env){
     const confidenceScore=estimateConfidence(state,turn.information_confidence);
     state.confidenceScore=confidenceScore;
     const calc=progressiveEstimate(findJob(state.jobCode),state,confidenceScore);
-    const canBook=Boolean(turn.ready_to_estimate||turn.ready||state.turnCount>=3) && confidenceScore>=35;
+    const canBook=Boolean(signals.wantsEstimate||turn.ready_to_estimate||turn.ready||state.turnCount>=3) && confidenceScore>=30;
+    const newlyReady=canBook&&!incomingState.estimateReady;
+    state.estimateReady=canBook;
     let estimateId=incomingState.estimateId||"";
     if(canBook&&env.DB){
       const job=findJob(state.jobCode);
@@ -303,9 +355,13 @@ async function handleKen(request,env){
       provisional:!canBook,
       summary:state.problemSummary||job.note
     };
+    estimate.showNow=Boolean(signals.wantsEstimate||newlyReady);
   }
 
-  const reply=turn.reply||"Thanks — tell me a little more about what’s happening.";
+  let reply=turn.reply||"Thanks — tell me a little more about what’s happening.";
+  if(estimate?.canBook&&!signals.wantsEstimate&&!incomingState.estimateReady){
+    reply="Your live estimate is ready below. You can continue to booking now, or add another useful detail if you want me to refine the range.";
+  }
   await saveMessage(env,sessionId,"assistant",reply);
 
   const progress=estimate?estimate.confidenceScore:20;
@@ -316,6 +372,7 @@ async function handleKen(request,env){
     safety:turn.safety||"",
     quickReplies:turn.quick_replies||turn.quickReplies||[],
     estimate,
+    showEstimateNow:Boolean(estimate?.showNow),
     progress
   });
 }
@@ -531,7 +588,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v9.1");
+  headers.set("x-ken-version","v9.2");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -547,7 +604,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.1",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.2",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }
