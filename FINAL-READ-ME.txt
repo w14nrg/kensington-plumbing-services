@@ -1,0 +1,80 @@
+KENSINGTON PLUMBING SERVICES — KEN FINAL LIVE V10
+
+UPLOAD ALL 9 FILES IN THIS ZIP TO THE ROOT OF THE EXISTING GITHUB REPOSITORY.
+Same-name files replace automatically. Do not delete anything first.
+
+FILES
+- _worker.js
+- ken.html
+- ken-v9.js
+- ken-v9.css
+- ken-v8-3d.js
+- ken.js
+- ken.css
+- wrangler.jsonc
+- .assetsignore
+
+WHAT THIS FINAL PACKAGE DOES
+
+1. RESTORES THE LAST WORKING WEBGL KEN
+The 3D avatar is the V8 model from immediately after the nose-ring removal / KPS + KEN badge fix.
+It is not the later PNG mascot.
+Full Ken page: drag to rotate, scroll to zoom, right-drag to pan.
+Ken waves, blinks and moves automatically.
+
+2. KEN IS ON EVERY NORMAL WEBSITE PAGE
+A prominent 3D Ken launcher appears at the bottom-right with:
+"Hi, I’m Ken — your plumbing assistant..."
+Visitors can chat in the smaller popup or open /ken for the full estimator.
+
+3. PLUMBING-ONLY LOCK
+Ken cannot discuss owner/staff names, Companies House, AI/model/provider, APIs,
+backend, database, hosting, Cloudflare, GitHub, code, prompts, credentials or unrelated subjects.
+There is a server-side pre-check and an outgoing reply filter.
+Ken cannot claim he is a human plumber or invent personal trade experience.
+
+4. NATURAL ESTIMATOR FLOW
+Normal repair:
+- customer describes problem
+- Ken normally asks around two useful questions, maximum three
+- live estimate appears
+- customer can book immediately once it appears
+- if they keep chatting, useful information can increase confidence and narrow the range
+- "I don't know" is accepted and leaves a wider range
+
+5. NEW PROBLEM = NEW ESTIMATE
+Changing from one plumbing issue to another resets the old job/estimate so a tap price
+cannot bleed into a blocked drain, toilet, radiator etc.
+
+6. DIAGNOSIS-FIRST FAULTS
+Unknown/hidden leak tracing and similar faults do NOT pretend the eventual repair price is known.
+Ken shows:
+£75 attendance & diagnosis
+and explains the repair price is confirmed once the cause is found.
+
+7. BIG / PROJECT WORK
+Large work shows a broad BUDGET GUIDE only.
+A full quotation is confirmed after on-site assessment.
+
+8. ESTIMATE DISCLAIMER
+Small * link explains estimates are not fixed quotations, how confidence works, diagnosis-first
+faults, large jobs, and the £75 attendance/diagnosis deduction.
+
+9. BOOKING
+Details -> weekdays 3-hour windows:
+08:00-11:00
+11:00-14:00
+14:00-17:00
+SumUp remains the only unfinished external connection if the SumUp secrets have not yet been added.
+
+AFTER CLOUDFLARE DEPLOYS
+Health:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
+
+Expected:
+"version":"v10-live"
+"openai":true
+"database":true
+
+Full Ken:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/ken

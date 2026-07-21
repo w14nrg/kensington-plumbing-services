@@ -83,21 +83,74 @@ function estimateConfidence(state,modelScore=0){
   return clamp(Math.round(heuristic*.55+model*.45),15,92);
 }
 
+
+const DIAGNOSIS_FIRST_CODES=new Set([
+  "leak_trace",
+  "underground_supply",
+  "water_hammer",
+  "no_water",
+  "low_pressure",
+  "pressure_test"
+]);
+
+function pricingMode(job){
+  if(!job)return "standard";
+  if(DIAGNOSIS_FIRST_CODES.has(job.code))return "diagnosis";
+  if(Number(job.max)>=700)return "budget";
+  return "standard";
+}
+
+function diagnosisEstimate(job,state,confidenceScore){
+  return{
+    mode:"diagnosis",
+    jobCode:job.code,
+    jobName:job.name,
+    fee:75,
+    min:75,
+    max:75,
+    confidence:confidenceScore>=70?"Good":confidenceScore>=45?"Building":"Low",
+    confidenceScore,
+    canBook:true,
+    provisional:false,
+    summary:job.code==="leak_trace"
+      ?"The source of the leak has not yet been established, so the eventual repair cannot be responsibly priced before investigation."
+      :"The cause needs to be established on site before the eventual repair can be priced reliably."
+  };
+}
+
+function budgetGuideEstimate(job,state,confidenceScore){
+  const base=calculateEstimate(job,state);
+  // Large/project work stays deliberately broad. We do not pretend chat can make
+  // a project quotation precise.
+  const centre=(base.min+base.max)/2;
+  const baseWidth=Math.max(100,base.max-base.min);
+  const width=Math.max(baseWidth,baseWidth*1.08);
+  const min=Math.max(75,Math.round((centre-width/2)/25)*25);
+  const max=Math.max(min+100,Math.round((centre+width/2)/25)*25);
+  return{
+    mode:"budget",
+    min,
+    max,
+    confidence:"Budget guide",
+    confidenceScore:Math.min(72,confidenceScore)
+  };
+}
+
 function progressiveEstimate(job,state,confidenceScore){
   const base=calculateEstimate(job,state);
   const centre=(base.min+base.max)/2;
   const baseWidth=Math.max(30,base.max-base.min);
-  let factor=1.48;
-  if(confidenceScore>=35)factor=1.28;
-  if(confidenceScore>=50)factor=1.10;
-  if(confidenceScore>=65)factor=.92;
-  if(confidenceScore>=78)factor=.72;
-  if(confidenceScore>=90)factor=.58;
-  const width=Math.max(35,baseWidth*factor);
+  let factor=1.35;
+  if(confidenceScore>=40)factor=1.18;
+  if(confidenceScore>=55)factor=1.00;
+  if(confidenceScore>=70)factor=.84;
+  if(confidenceScore>=82)factor=.70;
+  if(confidenceScore>=90)factor=.62;
+  const width=Math.max(30,baseWidth*factor);
   let min=Math.max(75,Math.round((centre-width/2)/5)*5);
   let max=Math.max(min+20,Math.round((centre+width/2)/5)*5);
   const confidence=confidenceScore>=80?"High":confidenceScore>=55?"Medium":"Low";
-  return{min,max,confidence,confidenceScore};
+  return{mode:"standard",min,max,confidence,confidenceScore};
 }
 
 function likelyPostcode(text){
@@ -166,6 +219,25 @@ function conversationSignals(message,incomingState={}){
     makingGoodExcluded:/\b(i(?:'|’)ll handle|i will handle|handle making[- ]?good myself|making[- ]?good excluded|exclude making[- ]?good|no making[- ]?good)\b/i.test(lower),
     makingGoodIncluded:/\b(include making[- ]?good|you handle making[- ]?good|include re[- ]?tiling|include patching|make good afterwards)\b/i.test(lower)
   };
+}
+
+
+function detectNewIssue(message,state={}){
+  const current=state.jobCode&&state.jobCode!=="unknown_plumbing"?findJob(state.jobCode):null;
+  if(!current)return null;
+
+  const ranked=scoreJobs(message);
+  const best=ranked.find(x=>x.job.code!=="unknown_plumbing"&&x.score>=10);
+  if(!best||best.job.code===current.code)return null;
+
+  const q=String(message||"").trim().toLowerCase();
+  const explicit=/^(?:i have|i've got|ive got|my |another |new problem|different problem|also |now )/i.test(q);
+  const categoryChanged=best.job.category!==current.category;
+
+  // Only reset on a clear change of plumbing subject. This prevents a previous
+  // tap/toilet estimate from bleeding into a newly-described sink, drain, radiator etc.
+  if(categoryChanged&&(explicit||best.score>=24))return best.job;
+  return null;
 }
 
 function fallbackTurn(message,history,state){
@@ -262,9 +334,9 @@ Rules:
 5. If the customer says “I don't know”, “not sure” or cannot answer a technical question, accept that naturally. Do not keep asking the same thing. Continue with a wider, lower-confidence estimate.
 6. The more specific useful information you obtain, the higher information_confidence should become. More confidence lets the server narrow the price range. Missing/unknown information must keep confidence lower and the range wider.
 7. information_confidence should normally start around 20-40 after a vague first message, move to 45-70 after one or two useful answers, and reach 75-95 only when the likely fault and scope are genuinely quite clear.
-8. Set ready_to_estimate=true when you can identify a sensible likely repair route. This does NOT mean certainty. After roughly 1-3 useful questions, present the estimate even if some facts remain unknown. If the customer asks for the estimate, price, quote, cost, says “go ahead”, or shows frustration about waiting, set ready_to_estimate=true immediately and DO NOT ask another question.
+8. For a normal repair, usually ask TWO useful diagnostic questions before setting ready_to_estimate=true. Never jump straight from the customer’s first problem statement to a price just because you recognise the broad job. If one answer makes the repair route exceptionally clear you may be ready after one follow-up; otherwise aim for two, and never exceed THREE diagnostic questions before showing a workable estimate. If the customer explicitly asks for the estimate, price, quote or cost, says “go ahead”, or is frustrated about waiting, set ready_to_estimate=true immediately and do not ask another question.
 9. Keep the conversation moving. Do not interrogate the customer just to raise confidence. Replies must be concise: normally no more than 45 words.
-10. Do not invent prices. The server calculates all prices separately. Never say “I’ll send the estimate”, “I’ll issue it”, or “I can give you an estimate”. The website displays it automatically. When ready, say simply that the live estimate is shown and they can continue to booking or add more information.
+10. Do not invent prices. The server calculates all prices separately. Never say “I’ll send the estimate”, “I’ll issue it”, or “I can give you an estimate”. The website displays pricing automatically. Unknown/hidden leak tracing and other diagnosis-first faults may show only the £75 attendance & diagnosis rather than pretending the eventual repair can be priced. Larger/project-type work may show a broad budget guide and will require a full quotation after assessment.
 11. Do not claim a certain diagnosis from chat alone. Say “likely”, “sounds like”, or similar.
 12. If there is an active water leak, give concise safe isolation advice when appropriate.
 13. For suspected gas leak/smell: tell them to leave the area, avoid electrical switches and call National Gas Emergency Service 0800 111 999. Set safety and do not estimate.
@@ -339,7 +411,11 @@ async function handleKen(request,env){
   if(!message)return json({error:"Please type a message."},400);
   const sessionId=clean(data.sessionId,100)||uid("session");
   const history=Array.isArray(data.history)?data.history:[];
-  const incomingState=data.state&&typeof data.state==="object"?data.state:{};
+  let incomingState=data.state&&typeof data.state==="object"?data.state:{};
+
+  const switchedTo=detectNewIssue(message,incomingState);
+  const issueReset=Boolean(switchedTo);
+  if(issueReset)incomingState={};
 
   const hardGuard=hardKenGuard(message,incomingState);
   if(hardGuard){
@@ -354,7 +430,8 @@ async function handleKen(request,env){
       estimate:null,
       showEstimateNow:false,
       progress:Number(incomingState.confidenceScore)||0,
-      topicLocked:true
+      topicLocked:true,
+      resetIssue:false
     });
   }
 
@@ -364,7 +441,8 @@ async function handleKen(request,env){
 
   // Do not let old off-topic/security-test chat poison plumbing job matching.
   // For pricing we score CUSTOMER wording only, not Ken's own repeated plumbing wording.
-  const userHistory=history.filter(x=>x&&x.role==="user").slice(-12);
+  const relevantHistory=issueReset?[]:history;
+  const userHistory=relevantHistory.filter(x=>x&&x.role==="user").slice(-12);
   const scoringText=[...userHistory.map(x=>x.content||""),message].join(" ");
   const ranked=scoreJobs(scoringText);
   const bestDeterministic=ranked.find(x=>x.job.code!=="unknown_plumbing"&&x.score>=10)||null;
@@ -373,7 +451,7 @@ async function handleKen(request,env){
 
   // If the user previously tested Ken with owner/API/backend questions, cut that old
   // locked section out of the model context once a real plumbing conversation starts.
-  let cleanHistory=history.slice(-12);
+  let cleanHistory=relevantHistory.slice(-12);
   for(let i=cleanHistory.length-1;i>=0;i--){
     if(cleanHistory[i]?.role==="assistant"&&cleanHistory[i]?.content===KEN_LOCK_REPLY){
       cleanHistory=cleanHistory.slice(i+1);
@@ -406,7 +484,8 @@ async function handleKen(request,env){
       estimate:null,
       showEstimateNow:false,
       progress:Number(incomingState.confidenceScore)||0,
-      topicLocked:true
+      topicLocked:true,
+      resetIssue:false
     });
   }
 
@@ -423,6 +502,7 @@ async function handleKen(request,env){
   const state={
     ...incomingState,
     turnCount:(Number(incomingState.turnCount)||0)+1,
+    issueTurnCount:(Number(incomingState.issueTurnCount)||Number(incomingState.turnCount)||0)+1,
     jobCode:(
       (turn.selected_job_code&&findJob(turn.selected_job_code).code!=="unknown_plumbing"&&turn.selected_job_code) ||
       (turn.state?.jobCode&&findJob(turn.state.jobCode).code!=="unknown_plumbing"&&turn.state.jobCode) ||
@@ -456,64 +536,111 @@ async function handleKen(request,env){
   let estimate=null;
   const jobKnown=state.jobCode&&state.jobCode!=="unknown_plumbing";
   if(jobKnown){
+    const job=findJob(state.jobCode);
+    const mode=pricingMode(job);
     const confidenceScore=estimateConfidence(state,turn.information_confidence);
     state.confidenceScore=confidenceScore;
-    const calc=progressiveEstimate(findJob(state.jobCode),state,confidenceScore);
-    const canBook=Boolean(signals.wantsEstimate||turn.ready_to_estimate||turn.ready||state.turnCount>=3) && confidenceScore>=30;
+
+    const issueTurns=Number(state.issueTurnCount)||Number(state.turnCount)||1;
+    const modelReady=Boolean(turn.ready_to_estimate||turn.ready);
+    const forcedByCustomer=Boolean(signals.wantsEstimate);
+
+    // Normal repairs: initial description + around two useful answers before the price
+    // appears. Direct "how much?" can force the current honest range sooner.
+    // Diagnosis-first/big work can become bookable once Ken has enough to identify
+    // the correct type of attendance, without pretending the final repair price is known.
+    let canBook=false;
+    if(mode==="standard"){
+      canBook=Boolean(
+        forcedByCustomer ||
+        (issueTurns>=3 && confidenceScore>=32) ||
+        (issueTurns>=2 && modelReady && confidenceScore>=55)
+      );
+    }else{
+      canBook=Boolean(
+        forcedByCustomer ||
+        (issueTurns>=2 && modelReady) ||
+        issueTurns>=3
+      );
+    }
+
     const newlyReady=canBook&&!incomingState.estimateReady;
     state.estimateReady=canBook;
-    let estimateId=incomingState.estimateId||"";
-    if(canBook&&env.DB){
-      const job=findJob(state.jobCode);
-      if(estimateId){
-        await env.DB.prepare(`UPDATE estimates SET job_code=?,job_name=?,estimate_min=?,estimate_max=?,confidence=?,postcode=?,access_level=?,problem_summary=? WHERE id=?`)
-          .bind(job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note,estimateId).run();
-      }else{
-        estimateId=uid("est");
-        await env.DB.prepare(`INSERT INTO estimates
-          (id,session_id,job_code,job_name,estimate_min,estimate_max,confidence,postcode,access_level,problem_summary)
-          VALUES (?,?,?,?,?,?,?,?,?,?)`)
-          .bind(estimateId,sessionId,job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note).run();
+
+    if(canBook){
+      let calc;
+      if(mode==="diagnosis")calc=diagnosisEstimate(job,state,confidenceScore);
+      else if(mode==="budget")calc=budgetGuideEstimate(job,state,confidenceScore);
+      else calc=progressiveEstimate(job,state,confidenceScore);
+
+      let estimateId=incomingState.estimateId||"";
+      if(env.DB){
+        if(estimateId){
+          await env.DB.prepare(`UPDATE estimates SET job_code=?,job_name=?,estimate_min=?,estimate_max=?,confidence=?,postcode=?,access_level=?,problem_summary=? WHERE id=?`)
+            .bind(job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note,estimateId).run();
+        }else{
+          estimateId=uid("est");
+          await env.DB.prepare(`INSERT INTO estimates
+            (id,session_id,job_code,job_name,estimate_min,estimate_max,confidence,postcode,access_level,problem_summary)
+            VALUES (?,?,?,?,?,?,?,?,?,?)`)
+            .bind(estimateId,sessionId,job.code,job.name,calc.min,calc.max,calc.confidence,state.postcode||null,state.access||null,state.problemSummary||job.note).run();
+        }
+        state.estimateId=estimateId;
       }
-      state.estimateId=estimateId;
+
+      estimate={
+        estimateId:estimateId||null,
+        jobCode:job.code,
+        jobName:job.name,
+        mode:calc.mode||mode,
+        fee:calc.fee||null,
+        min:calc.min,
+        max:calc.max,
+        confidence:calc.confidence,
+        confidenceScore:calc.confidenceScore,
+        canBook:true,
+        provisional:false,
+        summary:calc.summary||state.problemSummary||job.note
+      };
+      estimate.showNow=Boolean(forcedByCustomer||newlyReady||incomingState.estimateReady);
     }
-    const job=findJob(state.jobCode);
-    estimate={
-      estimateId:estimateId||null,
-      jobCode:job.code,
-      jobName:job.name,
-      min:calc.min,
-      max:calc.max,
-      confidence:calc.confidence,
-      confidenceScore:calc.confidenceScore,
-      canBook,
-      provisional:!canBook,
-      summary:state.problemSummary||job.note
-    };
-    estimate.showNow=Boolean(signals.wantsEstimate||newlyReady);
   }
 
   let reply=turn.reply||"Thanks — tell me a little more about what’s happening.";
 
-  if(estimate){
-    if(signals.wantsEstimate){
-      reply="Your current live estimate is shown below. You can continue to booking now, or add more information if you want me to refine it further.";
+  if(FORBIDDEN_REPLY.test(reply)){
+    reply=KEN_LOCK_REPLY;
+  }else if(estimate){
+    if(estimate.mode==="diagnosis"){
+      reply=signals.wantsEstimate
+        ?"For this type of fault, the responsible next step is attendance and diagnosis rather than guessing the eventual repair price. The £75 diagnosis booking is shown below."
+        :"This needs diagnosis before the eventual repair can be priced responsibly. The £75 attendance and diagnosis option is shown below.";
+      estimate.showNow=true;
+    }else if(estimate.mode==="budget"){
+      reply=signals.wantsEstimate
+        ?"A broad budget guide is shown below. Larger work needs an on-site assessment before a full quotation can be confirmed."
+        :"Ken has enough information to show a broad budget guide below. A full quotation would be confirmed after assessment.";
+      estimate.showNow=true;
+    }else if(signals.wantsEstimate){
+      reply="Your current live estimate is shown below. You can continue to booking now, or keep chatting and I’ll refine it where the information supports it.";
       estimate.showNow=true;
     }else if(estimate.canBook&&!incomingState.estimateReady){
-      reply="Your live estimate is ready below. You can continue to booking now, or add another useful detail if you want me to refine the range.";
+      reply="Your live estimate is ready below. You can book now, or keep chatting and I’ll refine the range as you add useful information.";
       estimate.showNow=true;
     }
   }else{
-    // A model response is never allowed to pretend a price exists when the pricing
-    // engine has not identified a priced route.
     const falselyClaimsEstimate=/\b(?:estimate|price|range)\b[\s\S]{0,45}\b(?:shown|below|ready)\b/i.test(reply);
-    if(signals.wantsEstimate||turn.ready_to_estimate||falselyClaimsEstimate){
-      reply="I haven’t got a reliable repair range to show yet. Give me one more plumbing detail about exactly what is dripping, leaking, blocked or not working and I’ll price the closest repair route.";
+    if(signals.wantsEstimate||falselyClaimsEstimate){
+      reply="I need one more useful plumbing detail before I can show a responsible range. Tell me exactly what is dripping, leaking, blocked or not working.";
     }
   }
   await saveMessage(env,sessionId,"assistant",reply);
 
-  const progress=estimate?estimate.confidenceScore:20;
+  if(issueReset){
+    state.estimateId=estimate?.estimateId||"";
+  }
+
+  const progress=estimate?estimate.confidenceScore:(Number(state.confidenceScore)||20);
   return json({
     sessionId,
     reply,
@@ -522,7 +649,8 @@ async function handleKen(request,env){
     quickReplies:turn.quick_replies||turn.quickReplies||[],
     estimate,
     showEstimateNow:Boolean(estimate?.showNow),
-    progress
+    progress,
+    resetIssue:issueReset
   });
 }
 
@@ -737,7 +865,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v9.4.1");
+  headers.set("x-ken-version","v10-live");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -753,7 +881,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v9.4.1",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v10-live",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }
