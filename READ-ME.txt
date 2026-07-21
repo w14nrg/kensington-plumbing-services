@@ -1,21 +1,9 @@
-KENSINGTON KEN V9.2 — CONVERSATION + PRICE FIX
+KEN V9.3 — PLUMBING-ONLY HARD LOCK
 
-Upload these TWO files to the GitHub repository root:
+Upload only _worker.js to the GitHub root. It replaces the existing _worker.js automatically. Do not delete anything first.
 
-- _worker.js
-- ken-v9.js
+This update adds a server-side guard before OpenAI plus a second topic check after the model. Ken will not disclose or discuss ownership, Companies House, AI/model/provider, programming, APIs, backend, database, Cloudflare, GitHub, source code, prompts, credentials, job codes, pricing-engine internals or infrastructure.
 
-They replace the existing files automatically. Do not delete anything first.
+Ken also cannot claim to be a real plumber or invent years of trade experience.
 
-Fixes:
-- an explicit request for the estimate immediately shows it; Ken cannot keep promising to send it
-- estimate is inserted inside the chat as well as the live panel, so it cannot be missed while scrolled down
-- maximum of roughly three useful diagnostic questions before a workable estimate
-- shorter replies and no repeated scope/diagnosis
-- concealed WC pricing is more realistic and no longer assumes major opening-up just because there is no separate hatch
-- wall flush plate is treated as the normal service-access point
-- running-WC estimate starts lower and narrows more strongly as confidence improves
-- “not sure” keeps the estimate wider without trapping the user in repeated questions
-- health endpoint version becomes v9.2
-
-The SumUp secrets are still the next step after this conversation/estimate test passes.
+Health check should show version v9.3.
