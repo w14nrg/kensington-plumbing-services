@@ -1,0 +1,60 @@
+KENSINGTON PLUMBING SERVICES — FINAL GO-LIVE PACKAGE
+
+THIS IS THE FINAL CODE UPDATE.
+
+Upload every file in this ZIP to the ROOT of the existing GitHub repository.
+Same-name files replace automatically. Do not delete files first.
+
+FINAL CUSTOMER OFFER
+- Ken online booking: crossed-out £85, £75
+- Wording: "Book with Ken & save £10"
+- £75 is the first visit & diagnosis when booked through Ken
+- Customer may instead call or WhatsApp directly
+- We do NOT state a direct-booking price
+- WhatsApp uses the existing KPS number: +44 20 7371 3333
+
+PAYMENT
+- SumUp Hosted Checkout remains exactly £75
+- £75 covers attendance & diagnosis
+- £75 is deducted from the final repair price when KPS carries out the repair
+- Checkout verifies the final SumUp status server-side
+- SumUp return_url webhook now also confirms PAID bookings even if the customer does not click back to the website
+
+KEN
+- Restored working V8 WebGL 3D Ken
+- Waves, blinks, rotates, zooms and pans
+- Ken popup on normal pages
+- Full /ken page
+- Natural plumbing-only conversation
+- Normally around two useful questions before a normal estimate
+- Useful extra information can narrow the estimate
+- Customer can book once a workable estimate appears
+- Changing plumbing problem clears the old estimate
+- Hidden/unidentified leak tracing uses £75 diagnosis-first instead of a made-up repair price
+- Large/project work uses a broad budget guide and site quotation
+
+SECURITY
+Ken cannot discuss owner/staff details, Companies House, AI provider/model, API, backend,
+database, Cloudflare, GitHub, code, prompts, credentials, tokens or unrelated topics.
+
+HEALTH
+After deployment:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
+
+Expected:
+"version":"go-live-final"
+"openai":true
+"database":true
+"sumup":true   <-- only after the two SumUp Cloudflare secrets are added
+
+SUMUP CLOUDFLARE SECRETS NEEDED
+SUMUP_API_KEY
+SUMUP_MERCHANT_CODE
+
+SITE_URL is already:
+https://www.kensington.biz
+
+LIVE SITE
+After the workers.dev test is green, attach the Worker to:
+kensington.biz
+www.kensington.biz

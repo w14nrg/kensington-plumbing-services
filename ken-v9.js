@@ -33,6 +33,15 @@ function clearEstimateForNewIssue(){
   messages.querySelectorAll(".ken-booking-card").forEach(x=>x.remove());
 }
 
+
+function bookingOffer(){
+  return `<div class="ken-book-offer">
+    <span class="ken-offer-price"><del>£85</del><strong>£75</strong></span>
+    <span class="ken-offer-copy"><b>Book with Ken & save £10</b><small>First visit & diagnosis</small></span>
+  </div>
+  <div class="ken-direct-choice">Prefer to book directly? <a href="tel:+442073713333">Call us</a> or <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp us</a>.</div>`;
+}
+
 function renderEstimate(e){
   state.estimate=e;save();progress(e.confidenceScore||30);estimateBox.hidden=false;
   estimateBox.classList.toggle("diagnosis-estimate",e.mode==="diagnosis");
@@ -81,7 +90,7 @@ async function send(text){
 function showDetailsForm(){
   if(messages.querySelector("[data-customer-details]"))return;
   add("Great. I’ll take your details first, then show you the available 3-hour appointment windows.","bot");
-  html(`<div class="ken-booking-card"><div class="ken-estimate-label">YOUR DETAILS</div><form class="ken-details-form" data-customer-details>
+  html(`<div class="ken-booking-card">${bookingOffer()}<div class="ken-estimate-label">YOUR DETAILS</div><form class="ken-details-form" data-customer-details>
   <input name="name" autocomplete="name" placeholder="Your name" required>
   <input name="phone" autocomplete="tel" placeholder="Mobile number" required>
   <textarea name="address" autocomplete="street-address" placeholder="Full address" required></textarea>
@@ -91,7 +100,7 @@ function showDetailsForm(){
   messages.querySelector("[data-customer-details]")?.addEventListener("submit",saveDetails);
 }
 async function saveDetails(ev){ev.preventDefault();const form=ev.currentTarget,btn=form.querySelector("button"),v=Object.fromEntries(new FormData(form).entries());btn.disabled=true;btn.textContent="Saving details…";try{const d=await api("/api/lead",{method:"POST",body:JSON.stringify({...v,sessionId:state.sessionId,estimateId:state.estimate?.estimateId})});state.leadId=d.leadId;save();form.closest(".ken-booking-card").remove();add("Thanks. Here are the next available 3-hour appointment windows.","bot");await loadSlots()}catch(e){btn.disabled=false;btn.textContent="Show 3-hour appointments";add(e.message,"bot")}}
-async function loadSlots(){try{const d=await api("/api/slots");if(!d.slots?.length){add("There are no online slots showing at the moment. Please call 020 7371 3333 and we’ll arrange the quickest visit.","bot");return}html(`<div class="ken-booking-card"><div class="ken-estimate-label">AVAILABLE 3-HOUR APPOINTMENTS</div><div class="ken-slots">${d.slots.slice(0,9).map(s=>`<button type="button" class="ken-slot" data-slot="${esc(s.slotKey)}"><strong>${esc(s.dayLabel)}</strong><small>${esc(s.timeLabel)}</small></button>`).join("")}</div><p class="slot-note">Choose a slot. We’ll hold it while you complete the £75 SumUp payment.</p></div>`);messages.querySelectorAll("[data-slot]").forEach(b=>b.addEventListener("click",()=>chooseSlot(b)))}catch(e){add(e.message,"bot")}}
+async function loadSlots(){try{const d=await api("/api/slots");if(!d.slots?.length){add("There are no online slots showing at the moment. Please call 020 7371 3333 and we’ll arrange the quickest visit.","bot");return}html(`<div class="ken-booking-card"><div class="ken-estimate-label">AVAILABLE 3-HOUR APPOINTMENTS</div><div class="ken-slots">${d.slots.slice(0,9).map(s=>`<button type="button" class="ken-slot" data-slot="${esc(s.slotKey)}"><strong>${esc(s.dayLabel)}</strong><small>${esc(s.timeLabel)}</small></button>`).join("")}</div><div class="ken-slot-offer"><del>£85</del><strong>£75 with Ken</strong><span>Save £10 on your first visit & diagnosis</span></div><p class="slot-note">Choose a slot. We’ll hold it while you complete the secure £75 SumUp payment.</p><div class="ken-direct-choice">Prefer to arrange it directly? <a href="tel:+442073713333">Call</a> or <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp</a>.</div></div>`);messages.querySelectorAll("[data-slot]").forEach(b=>b.addEventListener("click",()=>chooseSlot(b)))}catch(e){add(e.message,"bot")}}
 async function chooseSlot(btn){const all=[...messages.querySelectorAll("[data-slot]")];all.forEach(b=>b.disabled=true);btn.textContent="Holding this slot…";try{const r=await api("/api/reserve-slot",{method:"POST",body:JSON.stringify({slotKey:btn.dataset.slot,sessionId:state.sessionId,estimateId:state.estimate?.estimateId,leadId:state.leadId})});state.reservation=r.reservation;save();add(`I’ve held ${r.reservation.displayLabel} for you. I’m taking you to SumUp now to pay the £75 attendance and diagnosis fee and confirm the booking.`,"bot");const c=await api("/api/checkout",{method:"POST",body:JSON.stringify({leadId:state.leadId,estimateId:state.estimate?.estimateId,reservationId:r.reservation.reservationId})});location.href=c.checkoutUrl}catch(e){all.forEach(b=>b.disabled=false);if(e.data?.setupRequired)add("The booking flow is ready, but SumUp still needs to be connected before I can take the £75 payment.","bot");else add(e.message,"bot")}}
 
 const disclaimer=document.createElement("div");

@@ -26,7 +26,7 @@ async function load3D(){
 
 const widget=document.createElement("div");
 widget.className="ken-widget";
-widget.innerHTML=`<div class="ken-greeting"><strong>👋 Hi, I’m Ken</strong><span>Your plumbing assistant. Tell me what’s gone wrong — I’ll ask a couple of useful questions, build a live estimate where possible and help you book in.</span></div>
+widget.innerHTML=`<div class="ken-greeting"><strong>👋 Hi, I’m Ken</strong><span>Your plumbing assistant. Tell me what’s gone wrong, get a live estimate and book online. <b>Book with Ken & save £10 on your first visit & diagnosis.</b></span><div class="ken-greeting-price"><del>£85</del><strong>£75</strong></div></div>
 <button class="ken-launcher" type="button" aria-label="Ask Ken">
 <div id="ken-mini-3d"></div>
 <span class="ken-launcher-copy"><b>Ask Ken</b><small>Live estimate & booking</small></span><span class="ken-live-dot"></span></button>
@@ -35,7 +35,7 @@ widget.innerHTML=`<div class="ken-greeting"><strong>👋 Hi, I’m Ken</strong><
 <div class="ken-progress"><span></span></div><div class="ken-confidence-line"><span>Estimate confidence</span><strong>Tell Ken what’s happening</strong></div>
 <div class="ken-live-estimate" hidden></div><div class="ken-messages" aria-live="polite"></div><div class="ken-quick"></div>
 <div class="ken-inputbar"><input maxlength="700" autocomplete="off" placeholder="Describe your plumbing problem…"><button class="ken-send" type="button">➜</button></div>
-<div class="ken-footnote">* Estimates are not fixed quotations. <button type="button" data-ken-disclaimer>How estimates work</button></div></section>`;
+<div class="ken-footnote">* Estimates are not fixed quotations. <button type="button" data-ken-disclaimer>How estimates work</button><span class="ken-foot-direct"> · <a href="tel:+442073713333">Call</a> · <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp</a></span></div></section>`;
 document.body.appendChild(widget);
 
 const disclaimer=document.createElement("div");disclaimer.className="ken-disclaimer-modal";disclaimer.hidden=true;
@@ -55,14 +55,19 @@ function add(text,role="bot",persist=true){const row=document.createElement("div
 function setQuick(items=[]){quick.innerHTML="";items.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>send(t);quick.appendChild(b)})}
 function typing(on){widget.querySelector("[data-typing]")?.remove();if(on){const t=document.createElement("div");t.className="ken-typing";t.dataset.typing="1";t.textContent="Ken is thinking…";messages.appendChild(t);window.Ken3D?.setMood("thinking")}else window.Ken3D?.setMood("idle")}
 function clearEstimateForNewIssue(){state.estimate=null;state.leadId=null;state.reservation=null;estimateBox.hidden=true;estimateBox.innerHTML="";progress(15);messages.querySelectorAll(".ken-booking-card").forEach(x=>x.remove())}
+
+function bookingChoiceHtml(){
+  return `<div class="ken-popup-offer"><span><del>£85</del><strong>£75</strong></span><p><b>Book with Ken & save £10</b><small>First visit & diagnosis</small></p></div>
+  <div class="ken-direct-choice">Or book directly: <a href="tel:+442073713333">Call</a> · <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp</a></div>`;
+}
 function renderEstimate(e){
   state.estimate=e;save();progress(e.confidenceScore||30);estimateBox.hidden=false;
   if(e.mode==="diagnosis"){
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>DIAGNOSIS REQUIRED*</span><strong>${esc(e.confidence||"Building")}</strong></div><div class="live-estimate-main"><div><small>Likely attendance</small><b>${esc(e.jobName)}</b></div><div><small>Attendance & diagnosis</small><b class="live-price">£75</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>${esc(e.summary||"The eventual repair price will be confirmed once the cause is identified.")}</p><button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>DIAGNOSIS REQUIRED*</span><strong>${esc(e.confidence||"Building")}</strong></div><div class="live-estimate-main"><div><small>Likely attendance</small><b>${esc(e.jobName)}</b></div><div><small>Attendance & diagnosis</small><b class="live-price">£75</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>${esc(e.summary||"The eventual repair price will be confirmed once the cause is identified.")}</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }else if(e.mode==="budget"){
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>BUDGET GUIDE*</span><strong>Site quote required</strong></div><div class="live-estimate-main"><div><small>Likely work</small><b>${esc(e.jobName)}</b></div><div><small>Broad guide</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(72,e.confidenceScore||20))}%"></span></div><p>Larger/project work needs an on-site assessment before a full quotation is confirmed.</p><button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>BUDGET GUIDE*</span><strong>Site quote required</strong></div><div class="live-estimate-main"><div><small>Likely work</small><b>${esc(e.jobName)}</b></div><div><small>Broad guide</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(72,e.confidenceScore||20))}%"></span></div><p>Larger/project work needs an on-site assessment before a full quotation is confirmed.</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }else{
-    estimateBox.innerHTML=`<div class="live-estimate-top"><span>LIVE ESTIMATE*</span><strong>${esc(e.confidence||"Low")} confidence</strong></div><div class="live-estimate-main"><div><small>Likely job</small><b>${esc(e.jobName)}</b></div><div><small>Current range</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>Book now, or keep chatting. Useful extra information can narrow the range where it genuinely helps.</p><button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
+    estimateBox.innerHTML=`<div class="live-estimate-top"><span>LIVE ESTIMATE*</span><strong>${esc(e.confidence||"Low")} confidence</strong></div><div class="live-estimate-main"><div><small>Likely job</small><b>${esc(e.jobName)}</b></div><div><small>Current range</small><b class="live-price">£${esc(e.min)}–£${esc(e.max)}</b></div></div><div class="confidence-meter"><span style="width:${Math.max(8,Math.min(100,e.confidenceScore||20))}%"></span></div><p>Book now, or keep chatting. Useful extra information can narrow the range where it genuinely helps.</p>${bookingChoiceHtml()}${bookingChoiceHtml()}${bookingChoiceHtml()}<button class="ken-action-btn" type="button" data-book>Continue to booking</button>`;
   }
   estimateBox.querySelector("[data-book]")?.addEventListener("click",()=>location.href="/ken");
 }

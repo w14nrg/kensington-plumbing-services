@@ -4,7 +4,8 @@
   "main": "_worker.js",
   "compatibility_date": "2026-07-20",
   "vars": {
-    "OPENAI_MODEL": "gpt-5"
+    "OPENAI_MODEL": "gpt-5",
+    "SITE_URL": "https://www.kensington.biz"
   },
   "assets": {
     "directory": ".",

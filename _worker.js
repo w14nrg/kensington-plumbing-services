@@ -162,6 +162,10 @@ function likelyPostcode(text){
 const KEN_LOCK_REPLY="I only help with plumbing problems, live estimates and bookings. Tell me what’s gone wrong with your plumbing.";
 const KEN_IDENTITY_REPLY="I’m Ken, Kensington Plumbing Services’ online plumbing assistant — not a human plumber. I only help with plumbing problems, live estimates and bookings. Tell me what’s gone wrong.";
 
+// Second barrier: even if a model ever tries to put internal/company/implementation
+// material in a reply, it is replaced before it can leave the Worker.
+const FORBIDDEN_REPLY=/\b(?:companies house|openai|chatgpt|gpt[- ]?\d*|api\b|backend|back[- ]end|database|cloudflare|github|source code|system prompt|developer prompt|api key|access token|bearer token|credential|endpoint|owner(?:'s)? name|who owns|programmed|coded by|built by our tech|node\/python|pricing engine|job[- ]?code)\b/i;
+
 function hardKenGuard(message,incomingState={}){
   const q=String(message||"").trim();
   const lower=q.toLowerCase();
@@ -250,6 +254,7 @@ function fallbackTurn(message,history,state){
   next.postcode=next.postcode||likelyPostcode(message);
 
   const lower=message.toLowerCase();
+  const scope=(best.category+" "+best.name+" "+full).toLowerCase();
   if(/behind|boxed|boxing|concealed cistern|back to wall|under floor|concealed|in wall/.test(lower))next.access="concealed";
   else if(/tight|awkward|hard to reach/.test(lower))next.access="awkward";
   else if(/visible|easy access|under sink|exposed/.test(lower))next.access="easy";
@@ -258,27 +263,73 @@ function fallbackTurn(message,history,state){
     return{reply:"Please leave the area, avoid operating electrical switches and call the National Gas Emergency Service on 0800 111 999.",state:next,safety:"Suspected gas leak: leave the area and call 0800 111 999.",ready:false};
   }
 
-  // Sensible defaults for normally exposed fixtures. Only ask about access when it can genuinely change the job.
-  if(/toilet|cistern|wc/.test((best.name+" "+full).toLowerCase()) && !next.access){
-    next.access=/concealed|back to wall|boxed|boxing/.test(lower)?"concealed":"easy";
-    if(!next.faultDetail){
-      next.faultDetail=true;
-      return{
-        reply:"Got it. When you say it keeps filling after you flush, do you mean the cistern never stops filling, or it just takes a very long time to refill?",
-        state:next,ready:false,
-        quickReplies:["It never stops filling","It takes a long time to refill"]
-      };
+  // Fallback must follow the same UX rule as the AI: ask relevant plumbing questions,
+  // never customer-details questions such as postcode.
+  const step=Number(next.fallbackStep)||0;
+
+  if(/toilet|cistern|wc/.test(scope)){
+    next.access=next.access||(/concealed|back to wall|boxed|boxing/.test(lower)?"concealed":"easy");
+    if(step===0){
+      next.fallbackStep=1;
+      return{reply:"What is the toilet actually doing — continuously running into the bowl, filling very slowly, not flushing properly, or leaking?",state:next,ready:false,quickReplies:["Running into the bowl","Slow to refill","Not flushing properly","Leaking"]};
+    }
+    if(step===1){
+      next.fallbackStep=2;
+      return{reply:"Is it a normal visible cistern, or a concealed/back-to-wall toilet with a flush plate?",state:next,ready:false,quickReplies:["Visible cistern","Concealed with flush plate","Not sure"]};
     }
   }
 
-  if(!next.postcode)return{reply:"Thanks. What’s the postcode for the property?",state:next,ready:false,quickReplies:[]};
+  if(/tap|mixer|faucet/.test(scope)){
+    if(step===0){
+      next.fallbackStep=1;
+      return{reply:"Where is the problem — dripping from the spout when off, leaking around the base/handle, or leaking from the pipework underneath?",state:next,ready:false,quickReplies:["Dripping from spout","Around base or handle","Pipework underneath"]};
+    }
+    if(step===1){
+      next.fallbackStep=2;
+      return{reply:"Is it a single-lever mixer or separate hot and cold handles?",state:next,ready:false,quickReplies:["Single-lever mixer","Separate hot/cold handles","Not sure"]};
+    }
+  }
 
-  if((/leak|pipe|shower|bath|drain|waste/.test((best.category+" "+best.name).toLowerCase())) && (!next.access||next.access==="unknown")){
-    return{reply:"Is the part you can see easy to get to, or is the problem hidden behind tiles, boxing, a wall or floor?",state:next,ready:false,quickReplies:["Easy to get to","Hidden behind tiles or boxing"]};
+  if(/drain|blocked|blockage|sink|basin|shower|bath|waste/.test(scope)){
+    if(step===0){
+      next.fallbackStep=1;
+      return{reply:"Which outlet is affected — kitchen sink, bathroom basin, shower/bath, or more than one fixture?",state:next,ready:false,quickReplies:["Kitchen sink","Bathroom basin","Shower/bath","More than one"]};
+    }
+    if(step===1){
+      next.fallbackStep=2;
+      return{reply:"Is it completely blocked, or does the water still drain away slowly?",state:next,ready:false,quickReplies:["Completely blocked","Draining slowly","Comes back up"]};
+    }
+  }
+
+  if(/leak|pipe/.test(scope)){
+    if(step===0){
+      next.fallbackStep=1;
+      return{reply:"Where are you actually seeing the water — from a visible pipe or fitting, under a sink/bath, from a ceiling or wall, or somewhere else?",state:next,ready:false,quickReplies:["Visible pipe/fitting","Under sink or bath","Ceiling or wall","Not sure"]};
+    }
+    if(step===1){
+      next.fallbackStep=2;
+      return{reply:"Can you see the exact source of the leak, or does it need tracing to find where the water is coming from?",state:next,ready:false,quickReplies:["I can see the source","Source needs tracing","Not sure"]};
+    }
+  }
+
+  if(/radiator|heating|trv|valve/.test(scope)){
+    if(step===0){
+      next.fallbackStep=1;
+      return{reply:"What is the main problem — radiator not heating, leaking, valve problem, or something else?",state:next,ready:false,quickReplies:["Not heating","Leaking","Valve problem","Something else"]};
+    }
+    if(step===1){
+      next.fallbackStep=2;
+      return{reply:"Is the issue on one radiator only, or are several radiators affected?",state:next,ready:false,quickReplies:["One radiator","Several radiators","Not sure"]};
+    }
+  }
+
+  if(step===0){
+    next.fallbackStep=1;
+    return{reply:"Tell me where the problem is and exactly what the water or fitting is doing.",state:next,ready:false,quickReplies:[]};
   }
 
   if(!next.access||next.access==="unknown")next.access="easy";
-  return{reply:"Thanks — that gives me enough to put an initial estimate together.",state:next,ready:true,quickReplies:[]};
+  return{reply:"Thanks — I’ve got enough plumbing information to build the current estimate.",state:next,ready:true,quickReplies:[]};
 }
 
 async function openAITurn(env,message,history,state,candidates){
@@ -764,13 +815,17 @@ async function handleCheckout(request,env){
       amount:75,
       currency:"GBP",
       merchant_code:env.SUMUP_MERCHANT_CODE,
-      description:`KPS attendance & diagnosis - ${reservation.appointment_date} ${reservation.start_time}`,
+      description:`KPS Ken online booking - £75 attendance & diagnosis - ${reservation.appointment_date} ${reservation.start_time}`,
       redirect_url:`${site}/ken-payment-return?ref=${encodeURIComponent(checkoutReference)}`,
+      return_url:`${site}/api/sumup-webhook`,
       hosted_checkout:{enabled:true}
     })
   });
   const sumup=await sumupResponse.json().catch(()=>({}));
-  if(!sumupResponse.ok||!sumup.hosted_checkout_url)return json({error:"I couldn’t start the SumUp payment."},502);
+  if(!sumupResponse.ok||!sumup.hosted_checkout_url){
+    console.error("SumUp checkout creation failed",sumupResponse.status,sumup);
+    return json({error:"I couldn’t start the secure £75 SumUp payment. Please try again or call 020 7371 3333."},502);
+  }
 
   const paymentId=uid("pay");
   await env.DB.prepare(`INSERT INTO payments
@@ -779,6 +834,41 @@ async function handleCheckout(request,env){
     .bind(paymentId,clean(data.leadId,100)||null,clean(data.estimateId,100)||null,reservationId,checkoutReference,sumup.id||null,sumup.status||"PENDING").run();
 
   return json({paymentId,checkoutUrl:sumup.hosted_checkout_url});
+}
+
+
+async function handleSumUpWebhook(request,env){
+  // SumUp sends {event_type:"CHECKOUT_STATUS_CHANGED", id:"checkout-id"}.
+  // Never trust the webhook body by itself: retrieve the checkout from SumUp and
+  // use that verified status as the source of truth.
+  if(!env.DB||!env.SUMUP_API_KEY)return new Response("",{status:204});
+  const body=await request.json().catch(()=>({}));
+  const checkoutId=clean(body.id,160);
+  if(!checkoutId)return new Response("",{status:204});
+
+  try{
+    const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{
+      headers:{"Authorization":`Bearer ${env.SUMUP_API_KEY}`}
+    });
+    if(!response.ok)return new Response("",{status:204});
+
+    const checkout=await response.json();
+    const payment=await env.DB.prepare(
+      "SELECT * FROM payments WHERE sumup_checkout_id=?"
+    ).bind(checkoutId).first();
+
+    if(!payment)return new Response("",{status:204});
+
+    const status=String(checkout.status||payment.status||"PENDING").toUpperCase();
+    await env.DB.prepare("UPDATE payments SET status=? WHERE id=?")
+      .bind(status,payment.id).run();
+
+    payment.status=status;
+    if(status==="PAID")await confirmReservation(env,payment);
+  }catch(error){
+    console.error("SumUp webhook verification failed",error);
+  }
+  return new Response("",{status:204});
 }
 
 async function handlePaymentStatus(request,env){
@@ -823,17 +913,18 @@ function paymentReturnPage(ref){
   async function check(){const r=await fetch("/api/payment-status?ref="+encodeURIComponent(ref));const d=await r.json();if(!r.ok)throw new Error(d.error||"Could not verify payment.");return d}
   try{let d=await check();if(!d.paid){await new Promise(r=>setTimeout(r,2500));d=await check()}
   if(!d.paid){title.textContent="Payment not confirmed yet";copy.textContent="Your payment may still be processing. Refresh this page shortly or call 020 7371 3333.";return}
-  title.textContent="You’re booked in.";copy.textContent="Your £75 payment has been confirmed and your appointment is booked.";
+  title.textContent="You’re booked in.";copy.textContent="Your £75 Ken online booking payment has been confirmed and your appointment is booked.";
   if(d.booking){const x=d.booking;content.innerHTML='<div class="slot">'+x.appointment_date+' · '+x.start_time+'–'+x.end_time+'</div><p>The £75 covers attendance and diagnosis and is deducted from the final repair price when we carry out the work. Your plumber will confirm the exact repair price on site before additional work proceeds.</p><p><a href="/">Return to Kensington Plumbing Services</a></p>'}
   else content.innerHTML='<p>Your payment is confirmed. Please call 020 7371 3333 with your payment reference so we can confirm the appointment.</p>'}
   catch(e){title.textContent="We could not verify the payment";copy.textContent=e.message+" Please call 020 7371 3333."}})();</script></body></html>`;
 }
 
 function stripTawk(html){
-  // Remove obvious external Tawk script tags while leaving the rest of the site untouched.
+  // Ken replaces the previous Tawk widget.
   return html
     .replace(/<script[^>]+src=["'][^"']*tawk[^"']*["'][^>]*><\/script>/gi,"")
-    .replace(/<script[^>]*>[\s\S]*?embed\.tawk\.to[\s\S]*?<\/script>/gi,"");
+    .replace(/<script[^>]*>[\s\S]*?embed\.tawk\.to[\s\S]*?<\/script>/gi,"")
+    .replace(/<[^>]+(?:id|class)=["'][^"']*(?:tawk|chat-consent|live-chat-consent)[^"']*["'][^>]*>[\s\S]*?<\/[^>]+>/gi,"");
 }
 
 async function serveAssetWithKen(request,env){
@@ -865,7 +956,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v10-live");
+  headers.set("x-ken-version","go-live-final");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -879,9 +970,20 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/reserve-slot")return handleReserveSlot(request,env);
       if(request.method==="POST"&&url.pathname==="/api/lead")return handleLead(request,env);
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
+      if(request.method==="POST"&&url.pathname==="/api/sumup-webhook")return handleSumUpWebhook(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
-      if(url.pathname==="/api/health")return json({ok:true,service:"Ken",version:"v10-live",jobs:JOBS.length,openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),model:env.OPENAI_MODEL||"gpt-5"});
+      if(url.pathname==="/api/health")return json({
+        ok:true,
+        service:"Ken",
+        version:"go-live-final",
+        jobs:JOBS.length,
+        openai:Boolean(env.OPENAI_API_KEY),
+        database:Boolean(env.DB),
+        sumup:Boolean(env.SUMUP_API_KEY&&env.SUMUP_MERCHANT_CODE),
+        site:"https://www.kensington.biz",
+        model:env.OPENAI_MODEL||"gpt-5"
+      });
       if(url.pathname==="/ken-payment-return"){
         return new Response(paymentReturnPage(url.searchParams.get("ref")||""),{headers:{"content-type":"text/html; charset=UTF-8"}});
       }

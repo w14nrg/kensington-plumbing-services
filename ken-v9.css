@@ -50,3 +50,13 @@
 .ken-disclaimer-close{position:absolute;right:14px;top:10px;border:0;background:transparent;font-size:28px;cursor:pointer}
 .diagnosis-estimate .live-price{font-size:20px}
 .budget-estimate .live-estimate-top span{color:#8f592e}
+
+
+/* GO-LIVE Ken online booking offer */
+.ken-save-banner{display:flex;align-items:center;gap:12px;margin-top:14px;padding:11px 12px;border:1px solid rgba(224,161,110,.45);border-radius:13px;background:rgba(255,255,255,.07)}
+.ken-save-banner>span{display:flex;align-items:baseline;gap:7px;white-space:nowrap}.ken-save-banner del{font-size:15px;color:#aebfc2}.ken-save-banner strong{font:800 28px/1 Georgia,serif;color:#f0b47d}.ken-save-banner p{margin:0!important}.ken-save-banner b{display:block;font-size:11px}.ken-save-banner small{display:block;font-size:9px;color:#c8d6d8;margin-top:3px}
+.ken-direct-links{margin-top:9px;color:#c8d6d8;font-size:10px}.ken-direct-links a{color:#f0b47d;font-weight:800}
+.ken-strip-price{display:flex!important;flex-direction:column;line-height:1!important}.ken-strip-price del{font-size:11px;color:#9fb3b6}.ken-strip-price strong{font-size:21px;color:#e0a16e}
+.ken-book-offer,.ken-popup-offer{display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #ead2b8;border-radius:12px;padding:10px;margin:0 0 11px}.ken-offer-price,.ken-popup-offer>span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}.ken-offer-price del,.ken-popup-offer del{font-size:12px;color:#8f9693}.ken-offer-price strong,.ken-popup-offer strong{font:800 24px/1 Georgia,serif;color:#0b2930}.ken-offer-copy b,.ken-popup-offer b{display:block;font-size:10px;color:#0b2930}.ken-offer-copy small,.ken-popup-offer small{display:block;font-size:8px;color:#6b7c78;margin-top:3px}.ken-popup-offer p{margin:0!important}
+.ken-direct-choice{font-size:9px;line-height:1.45;color:#6e817d;margin:7px 0 10px}.ken-direct-choice a{color:#8d552f;font-weight:900;text-decoration:none}
+.ken-slot-offer{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-top:10px;padding:9px 10px;background:#fff7ed;border:1px solid #ead2b8;border-radius:10px}.ken-slot-offer del{font-size:10px;color:#8f9693}.ken-slot-offer strong{font-size:13px;color:#0b2930}.ken-slot-offer span{font-size:8px;color:#6e817d}
