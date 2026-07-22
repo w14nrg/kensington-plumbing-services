@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Chelsea | Chelsea.biz</title>
+  <meta name="description" content="Your free Chelsea.biz member profile, Chelsea preferences and companion settings.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/membership.css">
+  <link rel="stylesheet" href="/account.css">
+</head>
+<body data-page="account">
+  <header class="account-topbar">
+    <a class="account-logo" href="/">CHELSEA<span>.BIZ</span></a>
+    <nav>
+      <a href="/">Home</a><a href="/blue-vault">Blue Vault</a><a href="/history">History</a><a href="/matchday">Matchday</a><a href="/transfers">Transfers</a><a href="/ask-blue">Ask BizBot</a>
+    </nav>
+    <button class="account-member-pill" data-member-control type="button"><span class="cb-member-dot"></span><span>My Chelsea</span></button>
+  </header>
+
+  <main class="account-shell">
+    <section class="account-hero">
+      <span>MY CHELSEA</span>
+      <h1>Your Chelsea account.</h1>
+      <p>Your profile, BizBot preferences, predictions, saved XI and everything personal to your Chelsea experience will live here.</p>
+    </section>
+
+    <section id="accountWelcome" class="account-welcome" hidden>
+      <div class="account-welcome-icon">✓</div>
+      <div><span>SIGNED IN</span><h2 id="accountWelcomeTitle">Welcome to Chelsea.biz.</h2><p>Your free Blue Member account is active.</p></div>
+    </section>
+
+    <div id="accountLoading" class="account-loading">Checking your membership…</div>
+
+    <section id="accountSignedOut" class="account-panel" hidden>
+      <div id="accountAuthMessage" class="account-auth-message" hidden></div>
+      <div class="account-empty-icon">C</div>
+      <h2>Log in or create an account</h2>
+      <p>Already a Blue Member? Log in with the email you used when you joined. New here? Create a free account.</p>
+      <div class="account-auth-actions">
+        <button id="accountLogin" class="account-primary" type="button">Log in</button>
+        <button id="accountCreate" class="account-secondary" type="button">Create free account</button>
+      </div>
+      <p class="account-private-note">A passwordless login sends a fresh email link. Use a normal browser—not Incognito—to remain signed in for 30 days.</p>
+    </section>
+
+    <section id="accountDashboard" hidden>
+      <div class="account-grid">
+        <article class="account-panel account-profile-card">
+          <div class="account-panel-head">
+            <div><span>BLUE MEMBER · SIGNED IN</span><h2 id="accountGreeting">My Chelsea</h2></div>
+            <b>FREE</b>
+          </div>
+          <div class="account-email" id="accountEmail"></div>
+          <div class="account-joined" id="accountJoined"></div>
+          <div class="account-active"><i></i> Membership active</div>
+        </article>
+
+        <article class="account-panel account-membership-card">
+          <span>YOUR ACCOUNT</span>
+          <h2>Everything personal starts here.</h2>
+          <div class="account-feature-list">
+            <a href="#profile"><b>My Chelsea profile</b><small>Available now</small></a>
+            <div><b>Saved BizBot conversations</b><small>Coming next</small></div>
+            <div><b>Predictions</b><small>Coming next</small></div>
+            <div><b>My XI</b><small>Coming next</small></div>
+          </div>
+        </article>
+      </div>
+
+      <form id="accountProfileForm" class="account-panel account-form">
+        <div id="profile" class="account-section-title"><span>YOUR CHELSEA PROFILE</span><h2>Tell BizBot who he’s talking football with.</h2></div>
+        <div class="account-fields">
+          <label>What should we call you?<input name="displayName" maxlength="50" placeholder="Nickname or first name"></label>
+          <label>Favourite current Chelsea player<input name="favouriteCurrentPlayer" maxlength="80" placeholder="e.g. Cole Palmer"></label>
+          <label>Favourite Chelsea player ever<input name="favouriteEverPlayer" maxlength="80" placeholder="e.g. Frank Lampard"></label>
+          <label>Favourite Chelsea era<input name="favouriteEra" maxlength="80" placeholder="e.g. Mourinho 2004–07"></label>
+          <label>Preferred formation<input name="preferredFormation" maxlength="30" placeholder="e.g. 4-2-3-1"></label>
+          <label>Where will Chelsea finish?<input name="predictedFinish" maxlength="30" placeholder="e.g. 3rd"></label>
+          <label class="account-wide">Favourite Chelsea memory<textarea name="favouriteMemory" maxlength="500" rows="4" placeholder="Munich 2012, Porto 2021, your first game at the Bridge…"></textarea></label>
+          <label class="account-checkbox account-wide"><input type="checkbox" name="marketingOptIn"><span>Email me occasional Chelsea.biz updates. No spam.</span></label>
+        </div>
+        <div class="account-actions"><button class="account-primary" type="submit">Save My Chelsea</button><span id="accountSaveStatus"></span></div>
+      </form>
+
+      <section class="account-panel account-control-panel">
+        <div><span>ACCOUNT SETTINGS</span><h3>Membership controls</h3><p>You are logged in for 30 days on this browser. You can log out now or permanently delete your account.</p></div>
+        <div class="account-control-actions"><button id="accountLogout" class="account-logout" type="button">Log out</button><button id="accountDelete" class="account-delete" type="button">Delete account</button></div>
+      </section>
+    </section>
+  </main>
+  <script src="/membership.js" defer></script>
+  <script src="/account.js" defer></script>
+</body>
+</html>
