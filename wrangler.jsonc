@@ -2,10 +2,13 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "kensington-plumbing-services",
   "main": "_worker.js",
-  "compatibility_date": "2026-07-20",
+  "compatibility_date": "2026-07-22",
   "vars": {
     "OPENAI_MODEL": "gpt-5",
-    "SITE_URL": "https://www.kensington.biz"
+    "SITE_URL": "https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev",
+    "OWNER_EMAIL": "info@kensington.biz",
+    "KEN_ADMIN_USERNAME": "nicholas",
+    "NOTIFY_ALL_STAGES": "false"
   },
   "assets": {
     "directory": ".",

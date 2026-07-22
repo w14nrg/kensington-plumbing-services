@@ -1,65 +1,53 @@
-KENSINGTON.BIZ — ONE UPLOAD BUILD
-=================================
+KENSINGTON PLUMBING SERVICES — KEN INSIGHTS V10
 
-THIS PACKAGE IS DELIBERATELY FLAT.
-There are NO public or src folders.
+WHAT THIS ADDS
+- Private password-protected dashboard at /ken-admin
+- Every genuine Ken conversation stored and viewable
+- Full customer/Ken transcript
+- Estimate, confidence, customer details, selected slot, payment and booking stages
+- Conversation-to-booking conversion percentage
+- Funnel showing where people leave
+- Most common job enquiries
+- Browser alerts while the dashboard is open
+- Email alert support for first conversation, new lead and confirmed paid booking
+- CSV export API for future reporting
+- D1 binding included in wrangler.jsonc
 
-WHAT TO DO NOW
-1. Extract the ZIP on your computer.
-2. Open the extracted folder.
-3. Select EVERYTHING inside it.
-4. In GitHub, choose Add file > Upload files.
-5. Drag all selected files into the upload page in ONE GO.
-6. Commit directly to main.
+UPLOAD TO GITHUB ROOT
+1. _worker.js
+2. wrangler.jsonc
+3. .assetsignore
 
-That replaces the main website files and leaves any older folders already in the repository untouched.
+DO NOT UPLOAD THE SQL FILE TO THE LIVE WEBSITE
+Run RUN-THIS-IN-D1-CONSOLE.sql in the kensington-ken D1 Console.
 
-WHAT WORKS IMMEDIATELY ON THE CURRENT STATIC SITE
-- New website design.
-- Ken on every page.
-- Ken's controlled live estimator with local fallback pricing.
-- All main service SEO pages.
-- All local SEO pages.
-- Existing important page names preserved.
-- Sitemap, robots.txt, canonical URLs, LocalBusiness schema, Service schema and FAQ schema.
+CLOUDFLARE SECRET REQUIRED
+Add a secret:
+KEN_ADMIN_PASSWORD = a strong private password chosen by Nicholas
 
-WHAT WE CONNECT AFTER THE WEBSITE UPLOAD
-- Cloudflare Pages/Worker backend.
-- D1 database binding named DB.
-- OPENAI_API_KEY secret for Ken's real AI conversation.
-- Optional OPENAI_MODEL variable (default is gpt-5-mini).
-- SUMUP_API_KEY secret.
-- SUMUP_MERCHANT_CODE variable/secret.
-- SITE_URL = https://www.kensington.biz
+Dashboard username:
+nicholas
 
-IMPORTANT
-The £75 payment button will not take live payments until SumUp is connected.
-Ken's estimator still works before that.
-No API keys belong in GitHub.
+Dashboard test address:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/ken-admin
 
-SEO
-This build retains the important existing service-page URLs such as:
-- plumbing-repairs.html
-- toilet-repairs.html
-- tap-replacement.html
-- shower-repairs.html
-- shower-pumps.html
-- leaks-pipework.html
-- radiator-valves.html
-- radiators-pumps.html
-- tanks-cylinders.html
-- small-plumbing-jobs.html
-- emergency-plumber.html
-- landlord-commercial.html
+Health check:
+https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev/api/health
 
-It also includes the local pages:
-- plumber-kensington.html
-- plumber-west-kensington-w14.html
-- plumber-chelsea.html
-- plumber-hammersmith.html
-- plumber-fulham.html
-- plumber-earls-court-sw5.html
-- plumber-barons-court-w14.html
-- plumber-shepherds-bush-w12.html
+Expected after SQL + secret:
+"version":"v10"
+"database":true
+"analytics":true
+"admin":true
 
-The old legacy folder URLs are included in _redirects ready for the Cloudflare move.
+EMAIL ALERTS
+Tracking and the dashboard work without email.
+Email alerts activate when either:
+A) a Cloudflare Email Service binding called EMAIL is connected, or
+B) a RESEND_API_KEY secret is added.
+
+Also set:
+NOTIFICATION_FROM_EMAIL = a verified sender, for example alerts@kensington.biz
+OWNER_EMAIL is already set to info@kensington.biz in wrangler.jsonc.
+
+Until email is connected, use the dashboard's browser alerts while it is open.
