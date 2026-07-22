@@ -356,7 +356,7 @@ async function sendOwnerNotification(env,eventType,sessionId,details={}){
     if(env.RESEND_API_KEY){
       const response=await fetch("https://api.resend.com/emails",{
         method:"POST",
-        headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json","Idempotency-Key":`${eventType}-${sessionId}`.slice(0,250)},
+        headers:{"Authorization":`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json","User-Agent":"Kensington-Ken/10.1","Idempotency-Key":`${eventType}-${sessionId}`.slice(0,250)},
         body:JSON.stringify({from:env.NOTIFICATION_FROM_EMAIL,to:[env.OWNER_EMAIL],subject:copy.subject,text,html})
       });
       if(!response.ok)throw new Error((await response.text()).slice(0,1000));
@@ -756,7 +756,7 @@ async function analyticsReady(env){
 }
 async function handleHealth(env){
   return json({
-    ok:true,service:"Ken",version:"v10",jobs:JOBS.length,
+    ok:true,service:"Ken",version:"v10.1",jobs:JOBS.length,
     openai:Boolean(env.OPENAI_API_KEY),database:Boolean(env.DB),
     analytics:await analyticsReady(env),admin:Boolean(env.KEN_ADMIN_PASSWORD),
     notifications:notificationReady(env),model:env.OPENAI_MODEL||"gpt-5"
@@ -885,7 +885,7 @@ async function serveAssetWithKen(request,env){
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","v10");
+  headers.set("x-ken-version","v10.1");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }

@@ -6,9 +6,10 @@
   "vars": {
     "OPENAI_MODEL": "gpt-5",
     "SITE_URL": "https://kensington-plumbing-services.nicholas-griffith-uk.workers.dev",
-    "OWNER_EMAIL": "info@kensington.biz",
+    "OWNER_EMAIL": "nicholas.griffith.uk@gmail.com",
     "KEN_ADMIN_USERNAME": "nicholas",
-    "NOTIFY_ALL_STAGES": "false"
+    "NOTIFY_ALL_STAGES": "true",
+    "NOTIFICATION_FROM_EMAIL": "Ken Alerts <onboarding@resend.dev>"
   },
   "assets": {
     "directory": ".",
