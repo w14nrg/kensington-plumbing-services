@@ -947,16 +947,16 @@ async function serveAssetWithKen(request,env){
 
   if(!dedicatedKenPage){
     if(!html.includes('href="/ken.css"')&&!html.includes("href='/ken.css'")){
-      html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css?v=static-ken-final"></head>');
+      html=html.replace(/<\/head>/i,'<link rel="stylesheet" href="/ken.css?v=ken-image-final"></head>');
     }
     if(!html.includes('src="/ken.js"')&&!html.includes("src='/ken.js'")){
-      html=html.replace(/<\/body>/i,'<script src="/ken.js?v=static-ken-final" defer></script></body>');
+      html=html.replace(/<\/body>/i,'<script src="/ken.js?v=ken-image-final" defer></script></body>');
     }
   }
 
   const headers=new Headers(response.headers);
   headers.delete("content-length");
-  headers.set("x-ken-version","static-ken-final");
+  headers.set("x-ken-version","ken-image-final");
   if(dedicatedKenPage)headers.set("cache-control","no-store, max-age=0");
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
@@ -976,7 +976,7 @@ export default{
       if(url.pathname==="/api/health")return json({
         ok:true,
         service:"Ken",
-        version:"static-ken-final",
+        version:"ken-image-final",
         jobs:JOBS.length,
         openai:Boolean(env.OPENAI_API_KEY),
         database:Boolean(env.DB),
