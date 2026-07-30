@@ -107,3 +107,31 @@
     border-radius:18px!important;
   }
 }
+
+
+/* FINAL STATIC KEN — replaces WebGL only */
+.ken-launcher{
+  overflow:hidden!important;
+}
+.ken-launcher-avatar{
+  width:92px;
+  height:108px;
+  flex:0 0 92px;
+  align-self:flex-end;
+  object-fit:contain;
+  object-position:center bottom;
+  margin-top:-18px;
+  margin-left:-2px;
+  filter:drop-shadow(0 8px 8px rgba(5,28,42,.18));
+  pointer-events:none;
+}
+@media(max-width:760px){
+  .ken-launcher-avatar{
+    width:57px!important;
+    height:62px!important;
+    flex:0 0 57px!important;
+    margin:0!important;
+    align-self:center!important;
+    object-position:center bottom!important;
+  }
+}

@@ -10,25 +10,12 @@ const save=()=>localStorage.setItem(STORAGE,JSON.stringify(state));
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{"Content-Type":"application/json",...(opts.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||"Something went wrong.");e.data=d;throw e}return d}
 
-function loadScript(src){
-  return new Promise((resolve,reject)=>{
-    if(document.querySelector(`script[src="${src}"]`))return resolve();
-    const s=document.createElement("script");s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
-  });
-}
-async function load3D(){
-  try{
-    if(!window.THREE)await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js");
-    if(!window.THREE?.OrbitControls)await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js");
-    if(!document.querySelector('script[src="/ken-v8-3d.js"]'))await loadScript("/ken-v8-3d.js");
-  }catch(e){console.warn("Ken 3D could not load",e)}
-}
 
 const widget=document.createElement("div");
 widget.className="ken-widget";
 widget.innerHTML=`<div class="ken-greeting"><strong>👋 Hi, I’m Ken</strong><span>Your plumbing assistant. Tell me what’s gone wrong, get a live estimate and book online. <b>Book with Ken & save £10 on your first visit & diagnosis.</b></span><div class="ken-greeting-price"><del>£85</del><strong>£75</strong></div></div>
 <button class="ken-launcher" type="button" aria-label="Ask Ken">
-<div id="ken-mini-3d"></div>
+<img class="ken-launcher-avatar" src="/ken-static-avatar.webp" alt="Ken, Kensington Plumbing Services plumbing assistant">
 <span class="ken-launcher-copy"><b>Ask Ken</b><small>Live estimate & booking</small></span><span class="ken-live-dot"></span></button>
 <section class="ken-panel" aria-label="Ken plumbing assistant">
 <header class="ken-head"><div class="ken-head-copy"><strong>Ken</strong><span>Plumbing assistant · Estimates · Booking</span><a href="/ken">Open Ken’s full page →</a></div><div class="ken-online">Online</div><button class="ken-close" type="button">×</button></header>
@@ -53,7 +40,7 @@ const panel=widget.querySelector(".ken-panel"),messages=widget.querySelector(".k
 function progress(n){const v=Math.max(10,Math.min(100,Number(n)||10));widget.querySelector(".ken-progress span").style.width=v+"%";confidenceText.textContent=v<35?`Low · ${v}%`:v<70?`Building · ${v}%`:v<85?`Good · ${v}%`:`High · ${v}%`}
 function add(text,role="bot",persist=true){const row=document.createElement("div");row.className=`ken-row ${role}`;row.innerHTML=role==="bot"?`<div class="ken-bot-dot">K</div><div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`:`<div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`;messages.appendChild(row);messages.scrollTop=messages.scrollHeight;if(persist){state.conversation.push({role:role==="user"?"user":"assistant",content:text});state.conversation=state.conversation.slice(-30);save()}}
 function setQuick(items=[]){quick.innerHTML="";items.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>send(t);quick.appendChild(b)})}
-function typing(on){widget.querySelector("[data-typing]")?.remove();if(on){const t=document.createElement("div");t.className="ken-typing";t.dataset.typing="1";t.textContent="Ken is thinking…";messages.appendChild(t);window.Ken3D?.setMood("thinking")}else window.Ken3D?.setMood("idle")}
+function typing(on){widget.querySelector("[data-typing]")?.remove();if(on){const t=document.createElement("div");t.className="ken-typing";t.dataset.typing="1";t.textContent="Ken is thinking…";messages.appendChild(t);void 0}else void 0}
 function clearEstimateForNewIssue(){state.estimate=null;state.leadId=null;state.reservation=null;estimateBox.hidden=true;estimateBox.innerHTML="";progress(15);messages.querySelectorAll(".ken-booking-card").forEach(x=>x.remove())}
 
 function bookingChoiceHtml(){
@@ -95,5 +82,4 @@ if(state.conversation.length)state.conversation.forEach(m=>add(m.content,m.role=
 else add("Hi, I’m Ken. Tell me what’s gone wrong with your plumbing. I’ll ask a couple of useful questions, build a live estimate where possible, and help you book in.","bot");
 if(state.estimate)renderEstimate(state.estimate,false);else progress(state.serverState?.confidenceScore||15);
 setQuick(["I have a leak","My toilet has a problem","I have a tap or shower problem","I have a radiator or heating problem","I have a blocked sink or drain"]);
-load3D();
 })();

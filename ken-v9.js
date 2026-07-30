@@ -9,7 +9,7 @@ const save=()=>localStorage.setItem(STORAGE,JSON.stringify(state));
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 
 root.innerHTML=`<header class="ken-chat-head">
-<div class="ken-mini-avatar"><div id="ken-mini-3d" class="ken-mini-3d-host" style="width:100%;height:100%"></div></div>
+<div class="ken-mini-avatar"><img src="/ken-static-avatar.webp" alt="Ken"></div>
 <div class="ken-chat-title"><strong>Ken</strong><span>Plumbing assistant · Estimates · Booking</span></div><div class="online-pill">Online</div></header>
 <div class="ken-progress"><span></span></div>
 <div class="ken-confidence-line"><span>Estimate confidence</span><strong>Tell Ken what’s happening</strong></div>
@@ -24,7 +24,7 @@ function progress(n){const v=Math.max(10,Math.min(100,Number(n)||10));root.query
 function add(text,role="bot",persist=true){const row=document.createElement("div");row.className=`ken-row ${role}`;row.innerHTML=role==="bot"?`<div class="ken-bot-dot">K</div><div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`:`<div class="ken-bubble">${esc(text).replace(/\n/g,"<br>")}</div>`;messages.appendChild(row);messages.scrollTop=messages.scrollHeight;if(persist){state.conversation.push({role:role==="user"?"user":"assistant",content:text});state.conversation=state.conversation.slice(-30);save()}}
 function html(x){const w=document.createElement("div");w.innerHTML=x;while(w.firstChild)messages.appendChild(w.firstChild);messages.scrollTop=messages.scrollHeight}
 function setQuick(items=[]){quick.innerHTML="";items.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>send(t);quick.appendChild(b)})}
-function typing(on){root.querySelector("[data-typing]")?.remove();if(on){const t=document.createElement("div");t.className="ken-typing";t.dataset.typing="1";t.textContent="Ken is thinking…";messages.appendChild(t);window.Ken3D?.setMood("thinking")}else window.Ken3D?.setMood("idle")}
+function typing(on){root.querySelector("[data-typing]")?.remove();if(on){const t=document.createElement("div");t.className="ken-typing";t.dataset.typing="1";t.textContent="Ken is thinking…";messages.appendChild(t);void 0}else void 0}
 async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{"Content-Type":"application/json",...(opts.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||"Something went wrong.");e.data=d;throw e}return d}
 
 function clearEstimateForNewIssue(){
@@ -124,7 +124,6 @@ function boot(){
   setQuick(["I have a leak","My toilet has a problem","I have a tap or shower problem","I have a radiator or heating problem","I have a blocked sink or drain"]);
   if(!state.estimate)progress(state.serverState?.confidenceScore||15);
 }
-document.dispatchEvent(new CustomEvent("ken-chat-ready"));
 root.querySelector(".ken-send").onclick=()=>{const t=input.value.trim();if(t){input.value="";send(t)}};
 input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();root.querySelector(".ken-send").click()}});
 document.querySelectorAll("[data-ken-prompt]").forEach(b=>b.addEventListener("click",()=>{send(b.dataset.kenPrompt);root.scrollIntoView({behavior:"smooth",block:"center"})}));

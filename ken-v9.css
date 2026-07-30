@@ -116,3 +116,45 @@
   .ken-chat-title span{font-size:9px!important}
   .online-pill{padding:5px 7px!important;font-size:8px!important}
 }
+
+
+/* FINAL STATIC KEN — approved plumber image */
+.ken-static-viewer{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 30%,rgba(224,161,110,.16),transparent 36%),
+    linear-gradient(180deg,#123c46 0%,#082a35 100%);
+}
+.ken-static-hero{
+  display:block;
+  width:auto;
+  height:92%;
+  max-width:92%;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 22px 22px rgba(0,0,0,.30));
+}
+.ken-mini-avatar img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 14%;
+}
+.ken-static-viewer .interactive-badge{
+  z-index:3;
+}
+@media(max-width:600px){
+  .ken-static-viewer{
+    height:330px!important;
+    min-height:330px!important;
+  }
+  .ken-static-hero{
+    height:96%;
+    max-width:96%;
+  }
+}
