@@ -28,7 +28,6 @@ jobs:
 
             if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("smokeTestMode") is True'; then
               echo "Production chat health check passed on attempt $attempt."
-              echo "healthy=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
 
@@ -36,7 +35,6 @@ jobs:
             sleep 10
           done
 
-          echo "healthy=false" >> "$GITHUB_OUTPUT"
           echo "Production chat health check failed after all retries."
           cat /tmp/ken-health-error 2>/dev/null || true
           exit 1
@@ -118,76 +116,64 @@ jobs:
               print(f"KEN:  {reply}")
           PY
 
-      - name: Open or update a chat incident
-        if: always() && (steps.health.outcome == 'failure' || steps.conversation.outcome == 'failure')
+      - name: Publish production monitor status
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            const title = 'Production Ken chat health check failed';
+            const healthOutcome = '${{ steps.health.outcome }}';
+            const conversationOutcome = '${{ steps.conversation.outcome }}';
+            const healthy = healthOutcome === 'success' && conversationOutcome === 'success';
+            const title = 'Ken production monitor status';
+            const checkedAt = new Date().toISOString();
             const body = [
-              'The automatic production check could not complete the protected Ken chat health check and exact toilet conversation.',
+              healthy ? '## ✅ Ken production chat is healthy' : '## ❌ Ken production chat check failed',
               '',
-              `Health outcome: ${{ steps.health.outcome }}`,
-              `Conversation outcome: ${{ steps.conversation.outcome }}`,
-              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              `Detected: ${new Date().toISOString()}`,
+              `Last checked: ${checkedAt}`,
+              `Health endpoint: **${healthOutcome}**`,
+              `Exact conversation test: **${conversationOutcome}**`,
               '',
-              'Check the latest Cloudflare deployment and Worker logs before relying on the chat.'
+              'The conversation tested on the live website is:',
+              '1. `My toilet has a problem`',
+              '2. `Leaking`',
+              '3. `Not sure`',
+              '',
+              healthy
+                ? 'Ken continued the plumbing conversation without returning the off-topic lock message.'
+                : 'Do not rely on the chat until the failing workflow run has been investigated.',
+              '',
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             ].join('\n');
 
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: 'open',
+              state: 'all',
               per_page: 100
             });
 
-            const existing = issues.find(issue => !issue.pull_request && issue.title === title);
-            if (existing) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: existing.number,
-                body
-              });
-            } else {
-              await github.rest.issues.create({
+            let issue = issues.find(item => !item.pull_request && item.title === title);
+            if (!issue) {
+              const created = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title,
                 body
               });
+              issue = created.data;
             }
 
-      - name: Close an existing incident after recovery
-        if: always() && steps.health.outcome == 'success' && steps.conversation.outcome == 'success'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const title = 'Production Ken chat health check failed';
-            const { data: issues } = await github.rest.issues.listForRepo({
+            const update = {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: 'open',
-              per_page: 100
-            });
+              issue_number: issue.number,
+              body,
+              state: healthy ? 'closed' : 'open'
+            };
+            if (healthy) update.state_reason = 'completed';
 
-            for (const issue of issues.filter(issue => !issue.pull_request && issue.title === title)) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                body: `The production chat health and conversation checks recovered at ${new Date().toISOString()}.`
-              });
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                state: 'closed',
-                state_reason: 'completed'
-              });
-            }
+            await github.rest.issues.update(update);
 
       - name: Fail when production is unhealthy
-        if: always() && (steps.health.outcome == 'failure' || steps.conversation.outcome == 'failure')
+        if: always() && (steps.health.outcome == 'failure' || steps.conversation.outcome != 'success')
         run: exit 1
