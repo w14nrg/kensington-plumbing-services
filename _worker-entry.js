@@ -6,8 +6,9 @@ import {
   repairOutgoingChatPayload,
   shouldForceDeterministicFallback
 } from "./chat-state-guard.js";
+import { applyContextEstimatePriority } from "./estimate-context-priority.js";
 
-const RELEASE = "ken-chat-estimate-guard-2026-08-02-v3";
+const RELEASE = "ken-chat-context-estimate-guard-2026-08-02-v4";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -52,6 +53,37 @@ function withoutOpenAI(env) {
   });
 }
 
+async function persistCorrectedEstimate(payload, env) {
+  const estimate = payload?.estimate;
+  const state = payload?.state || {};
+  if (!payload?.estimateCorrected || !estimate?.estimateId || !env?.DB) return payload;
+
+  try {
+    await env.DB.prepare(`
+      UPDATE estimates
+      SET job_code=?, job_name=?, estimate_min=?, estimate_max=?, confidence=?,
+          postcode=?, access_level=?, problem_summary=?
+      WHERE id=?
+    `).bind(
+      estimate.jobCode,
+      estimate.jobName,
+      estimate.min,
+      estimate.max,
+      estimate.confidence,
+      state.postcode || null,
+      state.access || null,
+      estimate.summary || state.problemSummary || null,
+      estimate.estimateId
+    ).run();
+    payload.estimateCorrectionPersisted = true;
+  } catch (error) {
+    console.error("Ken corrected estimate persistence error", error);
+    payload.estimateCorrectionPersisted = false;
+  }
+
+  return payload;
+}
+
 async function handleGuardedKenRequest(request, env, context) {
   const originalBody = await request.clone().json().catch(() => null);
   if (!originalBody || typeof originalBody !== "object" || Array.isArray(originalBody)) {
@@ -93,6 +125,8 @@ async function handleGuardedKenRequest(request, env, context) {
   payload = repairOutgoingChatPayload(payload, repairInfo);
   payload = applyRepeatedFallbackGuard(payload, repairInfo);
   payload = repairFallbackCompletion(payload, repairInfo);
+  payload = applyContextEstimatePriority(payload, repairInfo);
+  payload = await persistCorrectedEstimate(payload, env);
 
   const headers = new Headers(response.headers);
   headers.set("content-type", "application/json; charset=UTF-8");
@@ -115,6 +149,7 @@ function healthResponse() {
     stateGuard: true,
     contextualReplies: true,
     estimateCompletionGuard: true,
+    contextEstimatePriority: true,
     smokeTestMode: true
   }), {
     status: 200,
