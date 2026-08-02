@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   applyRepeatedFallbackGuard,
+  inferFallbackContext,
   inferFallbackStepFromHistory,
   inferFallbackStepFromText,
   repairIncomingChatBody,
@@ -12,6 +13,7 @@ import {
 
 const toiletFirstQuestion = "What is the toilet actually doing — continuously running into the bowl, filling very slowly, not flushing properly, or leaking?";
 const toiletSecondQuestion = "Is it a normal visible cistern, or a concealed/back-to-wall toilet with a flush plate?";
+const lockReply = "I only help with plumbing problems, live estimates and bookings. Tell me what’s gone wrong with your plumbing.";
 
 test("detects first and second deterministic fallback steps", () => {
   assert.equal(inferFallbackStepFromText(toiletFirstQuestion), 1);
@@ -59,7 +61,7 @@ test("does not force fallback once an estimate is ready", () => {
   assert.equal(shouldForceDeterministicFallback(repaired), false);
 });
 
-test("writes the fallback step back into the outgoing browser state", () => {
+test("writes the fallback step and active context back into outgoing browser state", () => {
   const repairInfo = repairIncomingChatBody({ state: {}, history: [] });
   const payload = repairOutgoingChatPayload({
     reply: toiletFirstQuestion,
@@ -67,6 +69,7 @@ test("writes the fallback step back into the outgoing browser state", () => {
   }, repairInfo);
 
   assert.equal(payload.state.fallbackStep, 1);
+  assert.equal(payload.state.jobCode, "wc_slow_fill");
 });
 
 test("clears stale fallback progress when the core worker resets to a new issue", () => {
@@ -114,4 +117,61 @@ test("recognises every current first-step fallback family", () => {
   for (const prompt of prompts) {
     assert.equal(inferFallbackStepFromHistory([{ role: "assistant", content: prompt }]), 1);
   }
+});
+
+test("keeps Not sure inside the active toilet conversation", () => {
+  const history = [
+    { role: "user", content: "My toilet has a problem" },
+    { role: "assistant", content: toiletFirstQuestion },
+    { role: "user", content: "Leaking" },
+    { role: "assistant", content: toiletSecondQuestion }
+  ];
+
+  const repaired = repairIncomingChatBody({
+    message: "Not sure",
+    state: { jobCode: "unknown_plumbing", fallbackStep: 2 },
+    history
+  });
+
+  assert.equal(repaired.historyStep, 2);
+  assert.equal(repaired.body.state.fallbackStep, 2);
+  assert.match(repaired.body.state.problemSummary, /Toilet fault/);
+  assert.equal(repaired.body.state.symptomDetail, "Not sure");
+  assert.equal(Boolean(repaired.body.state.problemSummary || repaired.body.state.symptomDetail), true);
+  assert.equal(shouldForceDeterministicFallback(repaired), true);
+});
+
+test("recovers an existing conversation after repeated topic-lock replies", () => {
+  const history = [
+    { role: "user", content: "My toilet has a problem" },
+    { role: "assistant", content: toiletFirstQuestion },
+    { role: "user", content: "Leaking" },
+    { role: "assistant", content: toiletSecondQuestion },
+    { role: "user", content: "Not sure" },
+    { role: "assistant", content: lockReply },
+    { role: "user", content: "What?" },
+    { role: "assistant", content: lockReply }
+  ];
+
+  const repaired = repairIncomingChatBody({
+    message: "This is a plumbing problem",
+    state: { jobCode: "unknown_plumbing" },
+    history
+  });
+
+  assert.equal(repaired.historyStep, 2);
+  assert.match(repaired.body.state.problemSummary, /Toilet fault/);
+  assert.equal(Boolean(repaired.body.state.problemSummary || repaired.body.state.symptomDetail), true);
+  assert.equal(shouldForceDeterministicFallback(repaired), true);
+});
+
+test("does not revive a fallback from an older completed issue", () => {
+  const history = [
+    { role: "assistant", content: toiletFirstQuestion },
+    { role: "user", content: "Leaking" },
+    { role: "assistant", content: "Your live estimate is ready below." }
+  ];
+
+  assert.equal(inferFallbackStepFromHistory(history), 0);
+  assert.equal(inferFallbackContext(history, "New tap problem"), null);
 });
