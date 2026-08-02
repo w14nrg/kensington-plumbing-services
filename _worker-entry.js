@@ -8,8 +8,10 @@ import {
 } from "./chat-state-guard.js";
 import { applyContextEstimatePriority } from "./estimate-context-priority.js";
 import { applyUniversalConversationContract } from "./conversation-contract.js";
+import { applyConversationRoute, prepareConversationRoute } from "./conversation-routing-v2.js";
+import { applyPlumbingFlowEngine } from "./plumbing-flow-engine.js";
 
-const RELEASE = "ken-chat-universal-contract-2026-08-02-v5";
+const RELEASE = "ken-chat-slot-routing-2026-08-02-v7";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -93,13 +95,11 @@ async function handleGuardedKenRequest(request, env, context) {
   }
 
   const repairInfo = repairIncomingChatBody(originalBody);
+  const routeInfo = prepareConversationRoute(repairInfo.body);
   const recoveryContext = shouldForceDeterministicFallback(repairInfo);
   const smokeTest = request.headers.get("x-ken-smoke-test") === "1";
-  const forwardedRequest = buildJsonRequest(request, repairInfo.body);
+  const forwardedRequest = buildJsonRequest(request, routeInfo.body);
 
-  // Real customers always get the normal AI route when it is available. The old code
-  // deliberately disabled it after a fallback question, trapping every later answer in
-  // a small collection of brittle hard-coded paths. Only isolated smoke tests disable it.
   let forwardedEnv = env;
   if (smokeTest) {
     forwardedEnv = withoutOpenAI(forwardedEnv);
@@ -128,14 +128,16 @@ async function handleGuardedKenRequest(request, env, context) {
     });
   }
 
-  // Older targeted guards remain as compatibility repair for conversations already in
-  // visitors' browsers. The final universal contract then validates every reply,
-  // regardless of job type or wording.
   payload = repairOutgoingChatPayload(payload, repairInfo);
+  payload = applyConversationRoute(payload, routeInfo);
   payload = applyRepeatedFallbackGuard(payload, repairInfo);
   payload = repairFallbackCompletion(payload, repairInfo);
   payload = applyContextEstimatePriority(payload, repairInfo);
-  payload = applyUniversalConversationContract(payload, repairInfo.body);
+
+  // Domain slot handling runs after compatibility repairs so it can remove a premature
+  // generic diagnosis and ask for the actual missing plumbing detail instead.
+  payload = applyPlumbingFlowEngine(payload, routeInfo.body);
+  payload = applyUniversalConversationContract(payload, routeInfo.body);
   payload = await persistCorrectedEstimate(payload, env);
 
   const headers = new Headers(response.headers);
@@ -144,6 +146,8 @@ async function handleGuardedKenRequest(request, env, context) {
   headers.set("x-ken-entry", RELEASE);
   headers.set("x-ken-mode", smokeTest ? "smoke" : recoveryContext ? "recovery" : "normal");
   headers.set("x-ken-contract", payload.contractVersion || "unknown");
+  headers.set("x-ken-route", payload.routeVersion || "unknown");
+  headers.set("x-ken-flow", payload.flowVersion || "unknown");
 
   return new Response(JSON.stringify(payload), {
     status: response.status,
@@ -162,6 +166,10 @@ function healthResponse() {
     estimateCompletionGuard: true,
     contextEstimatePriority: true,
     universalConversationContract: true,
+    explicitConversationRouting: true,
+    assistantTextExcludedFromRouting: true,
+    slotBasedQuestioning: true,
+    prematureDiagnosisRecovery: true,
     realUsersKeepAIRoute: true,
     smokeTestMode: true
   }), {
@@ -170,7 +178,9 @@ function healthResponse() {
       "content-type": "application/json; charset=UTF-8",
       "cache-control": "no-store",
       "x-ken-entry": RELEASE,
-      "x-ken-contract": "universal-v1"
+      "x-ken-contract": "universal-v1",
+      "x-ken-route": "explicit-family-v1",
+      "x-ken-flow": "slot-engine-v1"
     }
   });
 }
@@ -187,7 +197,7 @@ export default {
       try {
         return await handleGuardedKenRequest(request, env, context);
       } catch (error) {
-        console.error("Ken universal contract error", error);
+        console.error("Ken slot routing error", error);
         const response = await coreWorker.fetch(request, env, context);
         return addReleaseHeaders(response, "guard-error");
       }
