@@ -7,8 +7,9 @@ import {
   shouldForceDeterministicFallback
 } from "./chat-state-guard.js";
 import { applyContextEstimatePriority } from "./estimate-context-priority.js";
+import { applyUniversalConversationContract } from "./conversation-contract.js";
 
-const RELEASE = "ken-chat-context-estimate-guard-2026-08-02-v4";
+const RELEASE = "ken-chat-universal-contract-2026-08-02-v5";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -61,18 +62,18 @@ async function persistCorrectedEstimate(payload, env) {
   try {
     await env.DB.prepare(`
       UPDATE estimates
-      SET job_code=?, job_name=?, estimate_min=?, estimate_max=?, confidence=?,
-          postcode=?, access_level=?, problem_summary=?
+      SET issue_text=?, job_code=?, job_name=?, estimate_min=?, estimate_max=?, confidence=?,
+          access_level=?, postcode=?
       WHERE id=?
     `).bind(
+      estimate.summary || state.problemSummary || estimate.jobName,
       estimate.jobCode,
       estimate.jobName,
       estimate.min,
       estimate.max,
       estimate.confidence,
-      state.postcode || null,
       state.access || null,
-      estimate.summary || state.problemSummary || null,
+      state.postcode || null,
       estimate.estimateId
     ).run();
     payload.estimateCorrectionPersisted = true;
@@ -92,19 +93,24 @@ async function handleGuardedKenRequest(request, env, context) {
   }
 
   const repairInfo = repairIncomingChatBody(originalBody);
-  const forceFallback = shouldForceDeterministicFallback(repairInfo);
+  const recoveryContext = shouldForceDeterministicFallback(repairInfo);
   const smokeTest = request.headers.get("x-ken-smoke-test") === "1";
   const forwardedRequest = buildJsonRequest(request, repairInfo.body);
 
+  // Real customers always get the normal AI route when it is available. The old code
+  // deliberately disabled it after a fallback question, trapping every later answer in
+  // a small collection of brittle hard-coded paths. Only isolated smoke tests disable it.
   let forwardedEnv = env;
-  if (forceFallback || smokeTest) forwardedEnv = withoutOpenAI(forwardedEnv);
-  if (smokeTest) forwardedEnv = hideBindings(forwardedEnv, ["DB"]);
+  if (smokeTest) {
+    forwardedEnv = withoutOpenAI(forwardedEnv);
+    forwardedEnv = hideBindings(forwardedEnv, ["DB"]);
+  }
 
   const response = await coreWorker.fetch(forwardedRequest, forwardedEnv, context);
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
-    return addReleaseHeaders(response, smokeTest ? "smoke" : forceFallback ? "fallback" : "normal");
+    return addReleaseHeaders(response, smokeTest ? "smoke" : recoveryContext ? "recovery" : "normal");
   }
 
   const raw = await response.text();
@@ -122,17 +128,22 @@ async function handleGuardedKenRequest(request, env, context) {
     });
   }
 
+  // Older targeted guards remain as compatibility repair for conversations already in
+  // visitors' browsers. The final universal contract then validates every reply,
+  // regardless of job type or wording.
   payload = repairOutgoingChatPayload(payload, repairInfo);
   payload = applyRepeatedFallbackGuard(payload, repairInfo);
   payload = repairFallbackCompletion(payload, repairInfo);
   payload = applyContextEstimatePriority(payload, repairInfo);
+  payload = applyUniversalConversationContract(payload, repairInfo.body);
   payload = await persistCorrectedEstimate(payload, env);
 
   const headers = new Headers(response.headers);
   headers.set("content-type", "application/json; charset=UTF-8");
   headers.set("cache-control", "no-store");
   headers.set("x-ken-entry", RELEASE);
-  headers.set("x-ken-mode", smokeTest ? "smoke" : forceFallback ? "fallback" : "normal");
+  headers.set("x-ken-mode", smokeTest ? "smoke" : recoveryContext ? "recovery" : "normal");
+  headers.set("x-ken-contract", payload.contractVersion || "unknown");
 
   return new Response(JSON.stringify(payload), {
     status: response.status,
@@ -150,13 +161,16 @@ function healthResponse() {
     contextualReplies: true,
     estimateCompletionGuard: true,
     contextEstimatePriority: true,
+    universalConversationContract: true,
+    realUsersKeepAIRoute: true,
     smokeTestMode: true
   }), {
     status: 200,
     headers: {
       "content-type": "application/json; charset=UTF-8",
       "cache-control": "no-store",
-      "x-ken-entry": RELEASE
+      "x-ken-entry": RELEASE,
+      "x-ken-contract": "universal-v1"
     }
   });
 }
@@ -173,7 +187,7 @@ export default {
       try {
         return await handleGuardedKenRequest(request, env, context);
       } catch (error) {
-        console.error("Ken state guard error", error);
+        console.error("Ken universal contract error", error);
         const response = await coreWorker.fetch(request, env, context);
         return addReleaseHeaders(response, "guard-error");
       }
