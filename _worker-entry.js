@@ -8,9 +8,10 @@ import {
 } from "./chat-state-guard.js";
 import { applyContextEstimatePriority } from "./estimate-context-priority.js";
 import { applyUniversalConversationContract } from "./conversation-contract.js";
-import { applyConversationRoute, prepareConversationRoute } from "./conversation-routing.js";
+import { applyConversationRoute, prepareConversationRoute } from "./conversation-routing-v2.js";
+import { applyPlumbingFlowEngine } from "./plumbing-flow-engine.js";
 
-const RELEASE = "ken-chat-explicit-routing-2026-08-02-v6";
+const RELEASE = "ken-chat-slot-routing-2026-08-02-v7";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -99,8 +100,6 @@ async function handleGuardedKenRequest(request, env, context) {
   const smokeTest = request.headers.get("x-ken-smoke-test") === "1";
   const forwardedRequest = buildJsonRequest(request, routeInfo.body);
 
-  // Real customers always get the normal AI route when it is available. Only isolated
-  // smoke tests disable it so the deterministic fallback can be verified directly.
   let forwardedEnv = env;
   if (smokeTest) {
     forwardedEnv = withoutOpenAI(forwardedEnv);
@@ -129,14 +128,15 @@ async function handleGuardedKenRequest(request, env, context) {
     });
   }
 
-  // The routing guard runs before pricing/contract repairs. It prevents the underlying
-  // fallback from changing issue family because words in an earlier assistant question
-  // happened to match another branch (for example “sink/bath” changing a leak to drain).
   payload = repairOutgoingChatPayload(payload, repairInfo);
   payload = applyConversationRoute(payload, routeInfo);
   payload = applyRepeatedFallbackGuard(payload, repairInfo);
   payload = repairFallbackCompletion(payload, repairInfo);
   payload = applyContextEstimatePriority(payload, repairInfo);
+
+  // Domain slot handling runs after compatibility repairs so it can remove a premature
+  // generic diagnosis and ask for the actual missing plumbing detail instead.
+  payload = applyPlumbingFlowEngine(payload, routeInfo.body);
   payload = applyUniversalConversationContract(payload, routeInfo.body);
   payload = await persistCorrectedEstimate(payload, env);
 
@@ -147,6 +147,7 @@ async function handleGuardedKenRequest(request, env, context) {
   headers.set("x-ken-mode", smokeTest ? "smoke" : recoveryContext ? "recovery" : "normal");
   headers.set("x-ken-contract", payload.contractVersion || "unknown");
   headers.set("x-ken-route", payload.routeVersion || "unknown");
+  headers.set("x-ken-flow", payload.flowVersion || "unknown");
 
   return new Response(JSON.stringify(payload), {
     status: response.status,
@@ -167,6 +168,8 @@ function healthResponse() {
     universalConversationContract: true,
     explicitConversationRouting: true,
     assistantTextExcludedFromRouting: true,
+    slotBasedQuestioning: true,
+    prematureDiagnosisRecovery: true,
     realUsersKeepAIRoute: true,
     smokeTestMode: true
   }), {
@@ -176,7 +179,8 @@ function healthResponse() {
       "cache-control": "no-store",
       "x-ken-entry": RELEASE,
       "x-ken-contract": "universal-v1",
-      "x-ken-route": "explicit-family-v1"
+      "x-ken-route": "explicit-family-v1",
+      "x-ken-flow": "slot-engine-v1"
     }
   });
 }
@@ -193,7 +197,7 @@ export default {
       try {
         return await handleGuardedKenRequest(request, env, context);
       } catch (error) {
-        console.error("Ken explicit routing error", error);
+        console.error("Ken slot routing error", error);
         const response = await coreWorker.fetch(request, env, context);
         return addReleaseHeaders(response, "guard-error");
       }
