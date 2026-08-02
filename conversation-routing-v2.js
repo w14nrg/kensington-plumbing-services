@@ -35,26 +35,31 @@ function latestQuestion(history, family = "") {
 }
 
 export function prepareConversationRoute(body) {
+  const originalState = validObject(body?.state);
+  const originalPersistedFamily = FAMILIES.has(originalState.conversationFamily)
+    ? originalState.conversationFamily
+    : "";
+  const originalJobFamily = familyFromJobCode(originalState.jobCode);
+
   const prepared = prepareBaseConversationRoute(body);
   const state = validObject(prepared.body?.state);
   const history = Array.isArray(prepared.body?.history) ? prepared.body.history : [];
   const message = String(prepared.message || prepared.body?.message || "");
-  const persistedFamily = FAMILIES.has(state.conversationFamily) ? state.conversationFamily : "";
-  const jobFamily = familyFromJobCode(state.jobCode);
 
-  // Once Ken has already polluted a conversation with the wrong-family question, words
-  // such as “blocked” in the customer's confused response are not a new plumbing issue.
-  // Persisted state/job context wins until the customer clearly starts another problem.
-  if (CONFUSION.test(message) && (persistedFamily || jobFamily)) {
-    const family = persistedFamily || jobFamily;
+  // The base fallback can itself overwrite the family after reading a polluted history.
+  // During a confused follow-up, use the state that arrived from the browser before that
+  // mutation. A visitor saying “Is what blocked?” is not starting a drain problem.
+  if (CONFUSION.test(message) && (originalPersistedFamily || originalJobFamily)) {
+    const family = originalPersistedFamily || originalJobFamily;
     const latestAnyQuestion = latestQuestion(history);
     const latestFamilyQuestion = latestQuestion(history, family);
-    const stage = Number(state.conversationStage) > 0
-      ? Number(state.conversationStage)
+    const stage = Number(originalState.conversationStage) > 0
+      ? Number(originalState.conversationStage)
       : Number(latestFamilyQuestion?.stage || 0);
 
     state.conversationFamily = family;
     state.conversationStage = stage;
+    if (originalState.jobCode) state.jobCode = originalState.jobCode;
 
     return {
       ...prepared,
