@@ -26,20 +26,19 @@ jobs:
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-health-error)"
             curl_status=$?
 
-            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("estimateCompletionGuard") is True; assert data.get("universalConversationContract") is True; assert data.get("realUsersKeepAIRoute") is True; assert data.get("smokeTestMode") is True'; then
-              echo "Production chat health check passed on attempt $attempt."
+            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("ok") is True; assert d.get("service") == "ken-chat"; assert d.get("universalConversationContract") is True; assert d.get("explicitConversationRouting") is True; assert d.get("assistantTextExcludedFromRouting") is True; assert d.get("slotBasedQuestioning") is True; assert d.get("prematureDiagnosisRecovery") is True; assert d.get("smokeTestMode") is True; assert "slot-routing" in str(d.get("release"))'; then
+              echo "Current routed chat release passed health check on attempt $attempt."
               exit 0
             fi
 
-            echo "Attempt $attempt did not return the expected protected chat release."
+            echo "Waiting for current routed chat release (attempt $attempt)."
             sleep 10
           done
 
-          echo "Production chat health check failed after all retries."
           cat /tmp/ken-health-error 2>/dev/null || true
           exit 1
 
-      - name: Run exact live estimate conversation
+      - name: Run exact live noisy-toilet estimate conversation
         id: conversation
         if: steps.health.outcome == 'success'
         continue-on-error: true
@@ -59,15 +58,14 @@ jobs:
           state = {}
 
           def send(message):
-              payload = {
-                  "message": message,
-                  "sessionId": session_id,
-                  "history": history,
-                  "state": state,
-              }
               request = urllib.request.Request(
                   url,
-                  data=json.dumps(payload).encode("utf-8"),
+                  data=json.dumps({
+                      "message": message,
+                      "sessionId": session_id,
+                      "history": history,
+                      "state": state,
+                  }).encode("utf-8"),
                   method="POST",
                   headers={
                       "content-type": "application/json",
@@ -76,20 +74,13 @@ jobs:
                   },
               )
               with urllib.request.urlopen(request, timeout=30) as response:
-                  if response.status != 200:
-                      raise AssertionError(f"Unexpected HTTP status {response.status}")
+                  assert response.status == 200
                   data = json.loads(response.read().decode("utf-8"))
-                  mode = response.headers.get("x-ken-mode")
-                  release = response.headers.get("x-ken-entry")
-                  contract = response.headers.get("x-ken-contract")
-                  if mode != "smoke":
-                      raise AssertionError(f"Expected smoke mode, received {mode!r}")
-                  if "universal-contract" not in str(release):
-                      raise AssertionError(f"Unexpected release {release!r}")
-                  if contract != "universal-v1":
-                      raise AssertionError(f"Unexpected contract {contract!r}")
-                  if data.get("contractVersion") != "universal-v1":
-                      raise AssertionError(f"Missing universal contract payload: {data!r}")
+                  assert response.headers.get("x-ken-mode") == "smoke"
+                  assert "slot-routing" in str(response.headers.get("x-ken-entry"))
+                  assert response.headers.get("x-ken-contract") == "universal-v1"
+                  assert response.headers.get("x-ken-route") == "explicit-family-v1"
+                  assert data.get("contractVersion") == "universal-v1"
                   return data
 
           messages = [
@@ -109,20 +100,12 @@ jobs:
               state = data.get("state") or {}
               time.sleep(0.2)
 
-          first_reply = transcript[0][1].lower()
-          second_reply = transcript[1][1].lower()
-          estimate_turn = transcript[2][2]
-          estimate_reply = transcript[2][1].lower()
-          followup_turn = transcript[3][2]
-          followup_reply = transcript[3][1].lower()
+          assert "what is the toilet actually doing" in transcript[0][1].lower(), transcript
+          assert "is it a normal visible cistern" in transcript[1][1].lower(), transcript
 
-          assert "what is the toilet actually doing" in first_reply, transcript
-          assert "is it a normal visible cistern" in second_reply, transcript
-
-          for label, data, reply in [
-              ("estimate turn", estimate_turn, estimate_reply),
-              ("follow-up turn", followup_turn, followup_reply),
-          ]:
+          for label, turn in [("estimate", transcript[2]), ("follow-up", transcript[3])]:
+              reply = turn[1].lower()
+              data = turn[2]
               estimate = data.get("estimate")
               assert data.get("topicLocked") is not True, (label, transcript)
               assert data.get("showEstimateNow") is True, (label, data)
@@ -134,13 +117,7 @@ jobs:
               assert "i only help with plumbing problems" not in reply, (label, reply)
               assert "£" in reply, (label, reply)
 
-          print("Exact production estimate conversation passed:")
-          for message, reply, data in transcript:
-              estimate = data.get("estimate") or {}
-              print(f"USER: {message}")
-              print(f"KEN:  {reply}")
-              if estimate:
-                  print(f"ESTIMATE: £{estimate.get('min')}–£{estimate.get('max')} ({estimate.get('jobCode')})")
+          print("Live noisy-toilet conversation passed.")
           PY
 
       - name: Publish production monitor status
@@ -152,23 +129,16 @@ jobs:
             const conversationOutcome = '${{ steps.conversation.outcome }}';
             const healthy = healthOutcome === 'success' && conversationOutcome === 'success';
             const title = 'Ken production monitor status';
-            const checkedAt = new Date().toISOString();
             const body = [
               healthy ? '## ✅ Ken production chat is healthy' : '## ❌ Ken production chat check failed',
               '',
-              `Last checked: ${checkedAt}`,
-              `Health endpoint: **${healthOutcome}**`,
-              `Exact estimate conversation: **${conversationOutcome}**`,
-              '',
-              'The live website conversation tested is:',
-              '1. `My toilet has a problem`',
-              '2. `It’s like making noise`',
-              '3. `It’s got a flush at the top`',
-              '4. `What you on about`',
+              `Last checked: ${new Date().toISOString()}`,
+              `Current routed release: **${healthOutcome}**`,
+              `Noisy-toilet estimate conversation: **${conversationOutcome}**`,
               '',
               healthy
-                ? 'Ken displayed a real toilet estimate on turns 3 and 4 and did not return the false “estimate ready” dead end.'
-                : 'Do not rely on the chat until the failing workflow run has been investigated.',
+                ? 'The current slot-routing release is live and the full noisy-toilet estimate conversation passed.'
+                : 'Do not rely on Ken until the failing production check has been investigated.',
               '',
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             ].join('\n');
@@ -179,18 +149,15 @@ jobs:
               state: 'all',
               per_page: 100
             });
-
             let issue = issues.find(item => !item.pull_request && item.title === title);
             if (!issue) {
-              const created = await github.rest.issues.create({
+              issue = (await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title,
                 body
-              });
-              issue = created.data;
+              })).data;
             }
-
             const update = {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -199,7 +166,6 @@ jobs:
               state: healthy ? 'closed' : 'open'
             };
             if (healthy) update.state_reason = 'completed';
-
             await github.rest.issues.update(update);
 
       - name: Fail when production is unhealthy
