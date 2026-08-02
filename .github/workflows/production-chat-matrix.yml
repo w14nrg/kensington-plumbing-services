@@ -16,15 +16,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Wait for universal contract release
+      - name: Wait for slot-routing release
         shell: bash
         run: |
           set +e
           for attempt in $(seq 1 24); do
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-matrix-health-error)"
             status=$?
-            if [ "$status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("universalConversationContract") is True; assert d.get("realUsersKeepAIRoute") is True; assert "universal-contract" in str(d.get("release"))'; then
-              echo "Universal contract release is live."
+            if [ "$status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("universalConversationContract") is True; assert d.get("explicitConversationRouting") is True; assert d.get("assistantTextExcludedFromRouting") is True; assert d.get("slotBasedQuestioning") is True; assert d.get("prematureDiagnosisRecovery") is True; assert "slot-routing" in str(d.get("release"))'; then
+              echo "Slot-routing release is live."
               exit 0
             fi
             echo "Waiting for production deployment (attempt $attempt)."
@@ -52,6 +52,12 @@ jobs:
                   "It's like making noise",
                   "It's got a flush at the top",
                   "What you on about",
+              ],
+              "toilet pipe leak": [
+                  "My toilet is leaking",
+                  "It's coming from the pipe at the back",
+                  "What",
+                  "It's the small thin water pipe",
               ],
               "dripping tap": [
                   "My kitchen tap is dripping",
@@ -110,9 +116,11 @@ jobs:
                       assert response.status == 200, (scenario, response.status)
                       release = response.headers.get("x-ken-entry")
                       contract = response.headers.get("x-ken-contract")
+                      route = response.headers.get("x-ken-route")
                       mode = response.headers.get("x-ken-mode")
-                      assert "universal-contract" in str(release), (scenario, release)
+                      assert "slot-routing" in str(release), (scenario, release)
                       assert contract == "universal-v1", (scenario, contract)
+                      assert route == "explicit-family-v1", (scenario, route)
                       assert mode == "smoke", (scenario, mode)
                       data = json.loads(response.read().decode("utf-8"))
 
@@ -134,6 +142,16 @@ jobs:
                   history.append({"role": "assistant", "content": reply})
                   state = data.get("state") or {}
 
+              if scenario == "toilet pipe leak":
+                  first = transcript[0][1].lower()
+                  second = transcript[1][1].lower()
+                  third = transcript[2][1].lower()
+                  assert "where is the toilet leaking from" in first, transcript
+                  assert "small water-supply pipe" in second and "waste connector" in second, transcript
+                  assert "£75" not in transcript[1][1], transcript
+                  assert "thin" in third and "large toilet outlet pipe" in third, transcript
+                  assert "£75" not in transcript[2][1], transcript
+
               final = transcript[-1][2]
               estimate = final.get("estimate")
               assert isinstance(estimate, dict), (scenario, transcript)
@@ -141,11 +159,19 @@ jobs:
               assert int(estimate.get("min") or 0) > 0, (scenario, estimate)
               assert int(estimate.get("max") or 0) >= int(estimate.get("min") or 0), (scenario, estimate)
               assert "£" in transcript[-1][1], (scenario, transcript[-1][1])
+
+              if scenario == "toilet pipe leak":
+                  assert estimate.get("jobCode") == "wc_supply_pipe_leak", estimate
+                  assert int(estimate.get("min")) == 95, estimate
+                  assert int(estimate.get("max")) == 195, estimate
+                  assert final.get("flowVersion") == "slot-engine-v1", final
+
               all_results[scenario] = {
                   "jobCode": estimate.get("jobCode"),
                   "min": estimate.get("min"),
                   "max": estimate.get("max"),
                   "repairs": final.get("contractRepairs") or [],
+                  "flow": final.get("flowVersion"),
               }
 
           print(json.dumps(all_results, indent=2))
@@ -164,8 +190,9 @@ jobs:
               `Last checked: ${new Date().toISOString()}`,
               `Live multi-journey test: **${{ steps.journeys.outcome }}**`,
               '',
-              'The live site was tested through six different plumbing journeys:',
+              'The live site was tested through seven plumbing journeys:',
               '- noisy toilet',
+              '- toilet leak from a pipe at the back, including `What` clarification',
               '- dripping tap',
               '- ceiling leak',
               '- cold radiator',
@@ -173,7 +200,7 @@ jobs:
               '- unclear/banging plumbing fault',
               '',
               healthy
-                ? 'Every journey avoided repeated replies and topic locks, and finished with a visible estimate or diagnosis price containing an actual £ amount.'
+                ? 'Every journey avoided repeated replies and topic locks, and finished with a visible price. The toilet-pipe journey asked for the missing pipe detail before pricing and did not prematurely offer £75 diagnosis.'
                 : 'Do not rely on Ken until the failing journey has been investigated.',
               '',
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
