@@ -1,0 +1,114 @@
+name: Production chat health
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check Ken production health
+        id: health
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          for attempt in $(seq 1 18); do
+            response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-health-error)"
+            curl_status=$?
+
+            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True'; then
+              echo "Production chat health check passed on attempt $attempt."
+              echo "healthy=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "Attempt $attempt did not return the expected protected chat release."
+            sleep 10
+          done
+
+          echo "healthy=false" >> "$GITHUB_OUTPUT"
+          echo "Production chat health check failed after all retries."
+          cat /tmp/ken-health-error 2>/dev/null || true
+          exit 1
+
+      - name: Open or update a chat incident
+        if: steps.health.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Production Ken chat health check failed';
+            const body = [
+              'The automatic production check could not confirm the protected Ken chat Worker at `https://www.kensington.biz/api/health`.',
+              '',
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              `Detected: ${new Date().toISOString()}`,
+              '',
+              'Check the latest Cloudflare deployment and Worker logs before relying on the chat.'
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const existing = issues.find(issue => !issue.pull_request && issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body
+              });
+            }
+
+      - name: Close an existing incident after recovery
+        if: steps.health.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Production Ken chat health check failed';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            for (const issue of issues.filter(issue => !issue.pull_request && issue.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `The production chat health check recovered at ${new Date().toISOString()}.`
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+            }
+
+      - name: Fail when production is unhealthy
+        if: steps.health.outcome == 'failure'
+        run: exit 1
