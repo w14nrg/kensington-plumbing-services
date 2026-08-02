@@ -1,0 +1,209 @@
+name: Production chat matrix
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "11 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Wait for universal contract release
+        shell: bash
+        run: |
+          set +e
+          for attempt in $(seq 1 24); do
+            response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-matrix-health-error)"
+            status=$?
+            if [ "$status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("universalConversationContract") is True; assert d.get("realUsersKeepAIRoute") is True; assert "universal-contract" in str(d.get("release"))'; then
+              echo "Universal contract release is live."
+              exit 0
+            fi
+            echo "Waiting for production deployment (attempt $attempt)."
+            sleep 10
+          done
+          cat /tmp/ken-matrix-health-error 2>/dev/null || true
+          exit 1
+
+      - name: Test several live plumbing journeys
+        id: journeys
+        continue-on-error: true
+        env:
+          KEN_URL: https://www.kensington.biz/api/ken
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          import uuid
+
+          url = os.environ["KEN_URL"]
+          scenarios = {
+              "noisy toilet": [
+                  "My toilet has a problem",
+                  "It's like making noise",
+                  "It's got a flush at the top",
+                  "What you on about",
+              ],
+              "dripping tap": [
+                  "My kitchen tap is dripping",
+                  "From the spout",
+                  "Single lever mixer",
+              ],
+              "ceiling leak": [
+                  "There is water coming through the ceiling",
+                  "I can see it on the ceiling",
+                  "Not sure where it starts",
+              ],
+              "cold radiator": [
+                  "My radiator is cold",
+                  "It is not heating",
+                  "Only one radiator",
+              ],
+              "slow kitchen sink": [
+                  "My kitchen sink drains slowly",
+                  "Kitchen sink",
+                  "It still drains but very slowly",
+              ],
+              "unclear plumbing fault": [
+                  "Something is wrong with the plumbing",
+                  "There is a banging noise near the pipes",
+                  "It happens when I turn a tap off",
+              ],
+          }
+
+          def normalise(value):
+              return " ".join(str(value or "").lower().split())
+
+          all_results = {}
+          for scenario, messages in scenarios.items():
+              history = []
+              state = {}
+              session_id = f"matrix-{uuid.uuid4()}"
+              transcript = []
+
+              for message in messages:
+                  request = urllib.request.Request(
+                      url,
+                      data=json.dumps({
+                          "message": message,
+                          "sessionId": session_id,
+                          "history": history,
+                          "state": state,
+                      }).encode("utf-8"),
+                      method="POST",
+                      headers={
+                          "content-type": "application/json",
+                          "x-ken-smoke-test": "1",
+                          "user-agent": "Ken production matrix",
+                      },
+                  )
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      assert response.status == 200, (scenario, response.status)
+                      release = response.headers.get("x-ken-entry")
+                      contract = response.headers.get("x-ken-contract")
+                      mode = response.headers.get("x-ken-mode")
+                      assert "universal-contract" in str(release), (scenario, release)
+                      assert contract == "universal-v1", (scenario, contract)
+                      assert mode == "smoke", (scenario, mode)
+                      data = json.loads(response.read().decode("utf-8"))
+
+                  reply = str(data.get("reply") or "")
+                  assert reply.strip(), (scenario, message, data)
+                  assert data.get("contractVersion") == "universal-v1", (scenario, data)
+                  assert data.get("topicLocked") is not True, (scenario, message, data)
+                  if history and history[-1].get("role") == "assistant":
+                      assert normalise(reply) != normalise(history[-1].get("content")), (scenario, transcript, reply)
+
+                  lower = reply.lower()
+                  claims_estimate = "estimate" in lower and any(word in lower for word in ["ready", "shown", "below", "current"])
+                  if claims_estimate:
+                      assert isinstance(data.get("estimate"), dict), (scenario, message, data)
+                      assert data.get("showEstimateNow") is True, (scenario, message, data)
+
+                  transcript.append((message, reply, data))
+                  history.append({"role": "user", "content": message})
+                  history.append({"role": "assistant", "content": reply})
+                  state = data.get("state") or {}
+
+              final = transcript[-1][2]
+              estimate = final.get("estimate")
+              assert isinstance(estimate, dict), (scenario, transcript)
+              assert final.get("showEstimateNow") is True, (scenario, final)
+              assert int(estimate.get("min") or 0) > 0, (scenario, estimate)
+              assert int(estimate.get("max") or 0) >= int(estimate.get("min") or 0), (scenario, estimate)
+              assert "£" in transcript[-1][1], (scenario, transcript[-1][1])
+              all_results[scenario] = {
+                  "jobCode": estimate.get("jobCode"),
+                  "min": estimate.get("min"),
+                  "max": estimate.get("max"),
+                  "repairs": final.get("contractRepairs") or [],
+              }
+
+          print(json.dumps(all_results, indent=2))
+          PY
+
+      - name: Publish matrix status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthy = '${{ steps.journeys.outcome }}' === 'success';
+            const title = 'Ken production conversation matrix';
+            const body = [
+              healthy ? '## ✅ Ken conversation matrix is healthy' : '## ❌ Ken conversation matrix failed',
+              '',
+              `Last checked: ${new Date().toISOString()}`,
+              `Live multi-journey test: **${{ steps.journeys.outcome }}**`,
+              '',
+              'The live site was tested through six different plumbing journeys:',
+              '- noisy toilet',
+              '- dripping tap',
+              '- ceiling leak',
+              '- cold radiator',
+              '- slow kitchen sink',
+              '- unclear/banging plumbing fault',
+              '',
+              healthy
+                ? 'Every journey avoided repeated replies and topic locks, and finished with a visible estimate or diagnosis price containing an actual £ amount.'
+                : 'Do not rely on Ken until the failing journey has been investigated.',
+              '',
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+            let issue = issues.find(item => !item.pull_request && item.title === title);
+            if (!issue) {
+              issue = (await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body
+              })).data;
+            }
+            const update = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body,
+              state: healthy ? 'closed' : 'open'
+            };
+            if (healthy) update.state_reason = 'completed';
+            await github.rest.issues.update(update);
+
+      - name: Fail when any journey is unhealthy
+        if: always() && steps.journeys.outcome != 'success'
+        run: exit 1
