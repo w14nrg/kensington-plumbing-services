@@ -6,7 +6,7 @@ import {
   shouldForceDeterministicFallback
 } from "./chat-state-guard.js";
 
-const RELEASE = "ken-chat-state-guard-2026-08-02-v1";
+const RELEASE = "ken-chat-context-guard-2026-08-02-v2";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -32,6 +32,16 @@ function buildJsonRequest(request, body) {
   });
 }
 
+function hideBindings(env, hiddenBindings) {
+  const hidden = new Set(hiddenBindings);
+  return new Proxy(env, {
+    get(target, property, receiver) {
+      if (hidden.has(property)) return undefined;
+      return Reflect.get(target, property, receiver);
+    }
+  });
+}
+
 function withoutOpenAI(env) {
   return new Proxy(env, {
     get(target, property, receiver) {
@@ -50,13 +60,18 @@ async function handleGuardedKenRequest(request, env, context) {
 
   const repairInfo = repairIncomingChatBody(originalBody);
   const forceFallback = shouldForceDeterministicFallback(repairInfo);
+  const smokeTest = request.headers.get("x-ken-smoke-test") === "1";
   const forwardedRequest = buildJsonRequest(request, repairInfo.body);
-  const forwardedEnv = forceFallback ? withoutOpenAI(env) : env;
+
+  let forwardedEnv = env;
+  if (forceFallback || smokeTest) forwardedEnv = withoutOpenAI(forwardedEnv);
+  if (smokeTest) forwardedEnv = hideBindings(forwardedEnv, ["DB"]);
+
   const response = await coreWorker.fetch(forwardedRequest, forwardedEnv, context);
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
-    return addReleaseHeaders(response, forceFallback ? "fallback" : "normal");
+    return addReleaseHeaders(response, smokeTest ? "smoke" : forceFallback ? "fallback" : "normal");
   }
 
   const raw = await response.text();
@@ -81,7 +96,7 @@ async function handleGuardedKenRequest(request, env, context) {
   headers.set("content-type", "application/json; charset=UTF-8");
   headers.set("cache-control", "no-store");
   headers.set("x-ken-entry", RELEASE);
-  headers.set("x-ken-mode", forceFallback ? "fallback" : "normal");
+  headers.set("x-ken-mode", smokeTest ? "smoke" : forceFallback ? "fallback" : "normal");
 
   return new Response(JSON.stringify(payload), {
     status: response.status,
@@ -95,7 +110,9 @@ function healthResponse() {
     ok: true,
     service: "ken-chat",
     release: RELEASE,
-    stateGuard: true
+    stateGuard: true,
+    contextualReplies: true,
+    smokeTestMode: true
   }), {
     status: 200,
     headers: {
