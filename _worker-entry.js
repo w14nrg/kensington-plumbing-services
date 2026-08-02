@@ -1,12 +1,13 @@
 import coreWorker from "./_worker.js";
 import {
   applyRepeatedFallbackGuard,
+  repairFallbackCompletion,
   repairIncomingChatBody,
   repairOutgoingChatPayload,
   shouldForceDeterministicFallback
 } from "./chat-state-guard.js";
 
-const RELEASE = "ken-chat-context-guard-2026-08-02-v2";
+const RELEASE = "ken-chat-estimate-guard-2026-08-02-v3";
 
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
@@ -91,6 +92,7 @@ async function handleGuardedKenRequest(request, env, context) {
 
   payload = repairOutgoingChatPayload(payload, repairInfo);
   payload = applyRepeatedFallbackGuard(payload, repairInfo);
+  payload = repairFallbackCompletion(payload, repairInfo);
 
   const headers = new Headers(response.headers);
   headers.set("content-type", "application/json; charset=UTF-8");
@@ -112,6 +114,7 @@ function healthResponse() {
     release: RELEASE,
     stateGuard: true,
     contextualReplies: true,
+    estimateCompletionGuard: true,
     smokeTestMode: true
   }), {
     status: 200,
