@@ -149,7 +149,14 @@ function isAmbiguousBackPipe(text) {
 
 function isToiletLeak(messages, state) {
   const text = messages.join(" ");
-  return state.conversationFamily === "toilet" && /\b(?:leak|leaking|water coming|water dripping|wet)\b/i.test(text);
+  const persistedLeakFlow = /^toilet_/.test(String(state.pendingQuestion || "")) ||
+    /^(?:wc_cistern_leak|wc_supply_pipe_leak|wc_flush_pipe|wc_pan_connector)$/.test(String(state.jobCode || "")) ||
+    /toilet.*leak|leak.*toilet/i.test(String(state.problemSummary || ""));
+
+  return state.conversationFamily === "toilet" && (
+    persistedLeakFlow ||
+    /\b(?:leak|leaking|water coming|water dripping|water from|wet)\b/i.test(text)
+  );
 }
 
 export function applyPlumbingFlowEngine(payload, requestBody = {}) {
@@ -234,8 +241,6 @@ export function applyPlumbingFlowEngine(payload, requestBody = {}) {
     );
   }
 
-  // A generic toilet-type/access question does not identify the leak source. Replace it
-  // with the missing slot rather than counting it as one of a fixed number of questions.
   if (!directSource && !/\bnot sure|don'?t know|cannot tell|can'?t tell\b/i.test(message)) {
     return questionResult(
       payload,
