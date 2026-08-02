@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  applyConversationRoute,
   classifyConversationFamily,
-  identifyRoutingQuestion,
-  prepareConversationRoute
+  identifyRoutingQuestion
 } from "../conversation-routing.js";
+import {
+  applyConversationRoute,
+  prepareConversationRoute
+} from "../conversation-routing-v2.js";
 
 const prompts = {
   toilet1: "What is the toilet actually doing — continuously running into the bowl, filling very slowly, not flushing properly, or leaking?",
@@ -55,8 +57,6 @@ test("assistant wording is excluded from issue classification", () => {
     user("Coming from the flat above")
   ];
 
-  // The assistant's leak question contains “sink/bath”, but that must never make the
-  // conversation a drain or blockage issue.
   assert.equal(classifyConversationFamily(history, "", {}), "leak");
 });
 
@@ -79,8 +79,6 @@ test("the exact reported leak conversation cannot jump into blockage", () => {
     ]
   });
 
-  // Simulate the broken core fallback returning the drain question because its own
-  // earlier assistant text included the words sink/bath.
   const second = applyConversationRoute(payload(prompts.drain2, {
     ...secondRoute.body.state,
     fallbackStep: 2
