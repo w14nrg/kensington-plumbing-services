@@ -26,7 +26,7 @@ jobs:
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-health-error)"
             curl_status=$?
 
-            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("estimateCompletionGuard") is True; assert data.get("smokeTestMode") is True'; then
+            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("estimateCompletionGuard") is True; assert data.get("universalConversationContract") is True; assert data.get("realUsersKeepAIRoute") is True; assert data.get("smokeTestMode") is True'; then
               echo "Production chat health check passed on attempt $attempt."
               exit 0
             fi
@@ -81,10 +81,15 @@ jobs:
                   data = json.loads(response.read().decode("utf-8"))
                   mode = response.headers.get("x-ken-mode")
                   release = response.headers.get("x-ken-entry")
+                  contract = response.headers.get("x-ken-contract")
                   if mode != "smoke":
                       raise AssertionError(f"Expected smoke mode, received {mode!r}")
-                  if "estimate-guard" not in str(release):
+                  if "universal-contract" not in str(release):
                       raise AssertionError(f"Unexpected release {release!r}")
+                  if contract != "universal-v1":
+                      raise AssertionError(f"Unexpected contract {contract!r}")
+                  if data.get("contractVersion") != "universal-v1":
+                      raise AssertionError(f"Missing universal contract payload: {data!r}")
                   return data
 
           messages = [
@@ -127,6 +132,7 @@ jobs:
               assert int(estimate.get("max") or 0) >= int(estimate.get("min") or 0), (label, estimate)
               assert "got enough plumbing information" not in reply, (label, reply)
               assert "i only help with plumbing problems" not in reply, (label, reply)
+              assert "£" in reply, (label, reply)
 
           print("Exact production estimate conversation passed:")
           for message, reply, data in transcript:
