@@ -14,7 +14,7 @@ permissions:
 jobs:
   health:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Check Ken production health
         id: health
@@ -26,7 +26,7 @@ jobs:
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-health-error)"
             curl_status=$?
 
-            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True'; then
+            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("smokeTestMode") is True'; then
               echo "Production chat health check passed on attempt $attempt."
               echo "healthy=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -41,15 +41,95 @@ jobs:
           cat /tmp/ken-health-error 2>/dev/null || true
           exit 1
 
+      - name: Run exact live conversation smoke test
+        id: conversation
+        if: steps.health.outcome == 'success'
+        continue-on-error: true
+        env:
+          KEN_URL: https://www.kensington.biz/api/ken
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+          import uuid
+
+          url = os.environ["KEN_URL"]
+          session_id = f"health-{uuid.uuid4()}"
+          history = []
+          state = {}
+
+          def send(message):
+              payload = {
+                  "message": message,
+                  "sessionId": session_id,
+                  "history": history,
+                  "state": state,
+              }
+              request = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode("utf-8"),
+                  method="POST",
+                  headers={
+                      "content-type": "application/json",
+                      "x-ken-smoke-test": "1",
+                      "user-agent": "Ken production smoke test",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 200:
+                      raise AssertionError(f"Unexpected HTTP status {response.status}")
+                  data = json.loads(response.read().decode("utf-8"))
+                  mode = response.headers.get("x-ken-mode")
+                  release = response.headers.get("x-ken-entry")
+                  if mode != "smoke":
+                      raise AssertionError(f"Expected smoke mode, received {mode!r}")
+                  if "context-guard" not in str(release):
+                      raise AssertionError(f"Unexpected release {release!r}")
+                  return data
+
+          transcript = []
+          for message in ["My toilet has a problem", "Leaking", "Not sure"]:
+              data = send(message)
+              reply = str(data.get("reply") or "")
+              transcript.append((message, reply, data))
+              history.append({"role": "user", "content": message})
+              history.append({"role": "assistant", "content": reply})
+              state = data.get("state") or {}
+              time.sleep(0.2)
+
+          first = transcript[0][1].lower()
+          second = transcript[1][1].lower()
+          final_data = transcript[2][2]
+          final_reply = transcript[2][1].lower()
+          final_state = final_data.get("state") or {}
+
+          assert "what is the toilet actually doing" in first, transcript
+          assert "is it a normal visible cistern" in second, transcript
+          assert final_data.get("topicLocked") is not True, transcript
+          assert "i only help with plumbing problems" not in final_reply, transcript
+          assert final_state.get("jobCode") == "wc_cistern_leak", final_state
+          assert "leaking toilet" in str(final_state.get("problemSummary") or "").lower(), final_state
+          assert int(final_state.get("fallbackStep") or 0) >= 2, final_state
+
+          print("Exact production conversation passed:")
+          for message, reply, _ in transcript:
+              print(f"USER: {message}")
+              print(f"KEN:  {reply}")
+          PY
+
       - name: Open or update a chat incident
-        if: steps.health.outcome == 'failure'
+        if: always() && (steps.health.outcome == 'failure' || steps.conversation.outcome == 'failure')
         uses: actions/github-script@v7
         with:
           script: |
             const title = 'Production Ken chat health check failed';
             const body = [
-              'The automatic production check could not confirm the protected Ken chat Worker at `https://www.kensington.biz/api/health`.',
+              'The automatic production check could not complete the protected Ken chat health check and exact toilet conversation.',
               '',
+              `Health outcome: ${{ steps.health.outcome }}`,
+              `Conversation outcome: ${{ steps.conversation.outcome }}`,
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               `Detected: ${new Date().toISOString()}`,
               '',
@@ -81,7 +161,7 @@ jobs:
             }
 
       - name: Close an existing incident after recovery
-        if: steps.health.outcome == 'success'
+        if: always() && steps.health.outcome == 'success' && steps.conversation.outcome == 'success'
         uses: actions/github-script@v7
         with:
           script: |
@@ -98,7 +178,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `The production chat health check recovered at ${new Date().toISOString()}.`
+                body: `The production chat health and conversation checks recovered at ${new Date().toISOString()}.`
               });
               await github.rest.issues.update({
                 owner: context.repo.owner,
@@ -110,5 +190,5 @@ jobs:
             }
 
       - name: Fail when production is unhealthy
-        if: steps.health.outcome == 'failure'
+        if: always() && (steps.health.outcome == 'failure' || steps.conversation.outcome == 'failure')
         run: exit 1
