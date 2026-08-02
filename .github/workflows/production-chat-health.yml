@@ -26,7 +26,7 @@ jobs:
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-health-error)"
             curl_status=$?
 
-            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("smokeTestMode") is True'; then
+            if [ "$curl_status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("ok") is True; assert data.get("service") == "ken-chat"; assert data.get("stateGuard") is True; assert data.get("contextualReplies") is True; assert data.get("estimateCompletionGuard") is True; assert data.get("smokeTestMode") is True'; then
               echo "Production chat health check passed on attempt $attempt."
               exit 0
             fi
@@ -39,7 +39,7 @@ jobs:
           cat /tmp/ken-health-error 2>/dev/null || true
           exit 1
 
-      - name: Run exact live conversation smoke test
+      - name: Run exact live estimate conversation
         id: conversation
         if: steps.health.outcome == 'success'
         continue-on-error: true
@@ -83,12 +83,19 @@ jobs:
                   release = response.headers.get("x-ken-entry")
                   if mode != "smoke":
                       raise AssertionError(f"Expected smoke mode, received {mode!r}")
-                  if "context-guard" not in str(release):
+                  if "estimate-guard" not in str(release):
                       raise AssertionError(f"Unexpected release {release!r}")
                   return data
 
+          messages = [
+              "My toilet has a problem",
+              "It's like making noise",
+              "It's got a flush at the top",
+              "What you on about",
+          ]
           transcript = []
-          for message in ["My toilet has a problem", "Leaking", "Not sure"]:
+
+          for message in messages:
               data = send(message)
               reply = str(data.get("reply") or "")
               transcript.append((message, reply, data))
@@ -97,23 +104,37 @@ jobs:
               state = data.get("state") or {}
               time.sleep(0.2)
 
-          first = transcript[0][1].lower()
-          second = transcript[1][1].lower()
-          final_data = transcript[2][2]
-          final_reply = transcript[2][1].lower()
-          final_state = final_data.get("state") or {}
+          first_reply = transcript[0][1].lower()
+          second_reply = transcript[1][1].lower()
+          estimate_turn = transcript[2][2]
+          estimate_reply = transcript[2][1].lower()
+          followup_turn = transcript[3][2]
+          followup_reply = transcript[3][1].lower()
 
-          assert "what is the toilet actually doing" in first, transcript
-          assert "is it a normal visible cistern" in second, transcript
-          assert final_data.get("topicLocked") is not True, transcript
-          assert "i only help with plumbing problems" not in final_reply, transcript
-          assert str(final_state.get("problemSummary") or final_state.get("symptomDetail") or "").strip(), final_state
-          assert int(final_state.get("fallbackStep") or 0) >= 2, final_state
+          assert "what is the toilet actually doing" in first_reply, transcript
+          assert "is it a normal visible cistern" in second_reply, transcript
 
-          print("Exact production conversation passed:")
-          for message, reply, _ in transcript:
+          for label, data, reply in [
+              ("estimate turn", estimate_turn, estimate_reply),
+              ("follow-up turn", followup_turn, followup_reply),
+          ]:
+              estimate = data.get("estimate")
+              assert data.get("topicLocked") is not True, (label, transcript)
+              assert data.get("showEstimateNow") is True, (label, data)
+              assert isinstance(estimate, dict), (label, data)
+              assert estimate.get("jobCode") == "wc_inlet_valve", (label, estimate)
+              assert int(estimate.get("min") or 0) > 0, (label, estimate)
+              assert int(estimate.get("max") or 0) >= int(estimate.get("min") or 0), (label, estimate)
+              assert "got enough plumbing information" not in reply, (label, reply)
+              assert "i only help with plumbing problems" not in reply, (label, reply)
+
+          print("Exact production estimate conversation passed:")
+          for message, reply, data in transcript:
+              estimate = data.get("estimate") or {}
               print(f"USER: {message}")
               print(f"KEN:  {reply}")
+              if estimate:
+                  print(f"ESTIMATE: £{estimate.get('min')}–£{estimate.get('max')} ({estimate.get('jobCode')})")
           PY
 
       - name: Publish production monitor status
@@ -131,15 +152,16 @@ jobs:
               '',
               `Last checked: ${checkedAt}`,
               `Health endpoint: **${healthOutcome}**`,
-              `Exact conversation test: **${conversationOutcome}**`,
+              `Exact estimate conversation: **${conversationOutcome}**`,
               '',
-              'The conversation tested on the live website is:',
+              'The live website conversation tested is:',
               '1. `My toilet has a problem`',
-              '2. `Leaking`',
-              '3. `Not sure`',
+              '2. `It’s like making noise`',
+              '3. `It’s got a flush at the top`',
+              '4. `What you on about`',
               '',
               healthy
-                ? 'Ken continued the plumbing conversation without returning the off-topic lock message.'
+                ? 'Ken displayed a real toilet estimate on turns 3 and 4 and did not return the false “estimate ready” dead end.'
                 : 'Do not rely on the chat until the failing workflow run has been investigated.',
               '',
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
