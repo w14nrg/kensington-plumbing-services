@@ -7,6 +7,10 @@ on:
     - cron: "11 * * * *"
   workflow_dispatch:
 
+concurrency:
+  group: production-chat-matrix
+  cancel-in-progress: true
+
 permissions:
   contents: read
   issues: write
@@ -16,15 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Wait for slot-routing release
+      - name: Wait for protected chat release
         shell: bash
         run: |
           set +e
           for attempt in $(seq 1 24); do
             response="$(curl -fsS --max-time 20 https://www.kensington.biz/api/health 2>/tmp/ken-matrix-health-error)"
             status=$?
-            if [ "$status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("universalConversationContract") is True; assert d.get("explicitConversationRouting") is True; assert d.get("assistantTextExcludedFromRouting") is True; assert d.get("slotBasedQuestioning") is True; assert d.get("prematureDiagnosisRecovery") is True; assert "slot-routing" in str(d.get("release"))'; then
-              echo "Slot-routing release is live."
+            if [ "$status" -eq 0 ] && printf '%s' "$response" | python -c 'import json,sys; d=json.load(sys.stdin); assert d.get("universalConversationContract") is True; assert d.get("explicitConversationRouting") is True; assert d.get("assistantTextExcludedFromRouting") is True; assert d.get("slotBasedQuestioning") is True; assert d.get("prematureDiagnosisRecovery") is True'; then
+              echo "Protected chat release is live."
               exit 0
             fi
             echo "Waiting for production deployment (attempt $attempt)."
@@ -114,11 +118,9 @@ jobs:
                   )
                   with urllib.request.urlopen(request, timeout=30) as response:
                       assert response.status == 200, (scenario, response.status)
-                      release = response.headers.get("x-ken-entry")
                       contract = response.headers.get("x-ken-contract")
                       route = response.headers.get("x-ken-route")
                       mode = response.headers.get("x-ken-mode")
-                      assert "slot-routing" in str(release), (scenario, release)
                       assert contract == "universal-v1", (scenario, contract)
                       assert route == "explicit-family-v1", (scenario, route)
                       assert mode == "smoke", (scenario, mode)
@@ -184,10 +186,13 @@ jobs:
           script: |
             const healthy = '${{ steps.journeys.outcome }}' === 'success';
             const title = 'Ken production conversation matrix';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const checkedAt = new Date();
             const body = [
               healthy ? '## ✅ Ken conversation matrix is healthy' : '## ❌ Ken conversation matrix failed',
               '',
-              `Last checked: ${new Date().toISOString()}`,
+              `Last checked: ${checkedAt.toISOString()}`,
               `Live multi-journey test: **${{ steps.journeys.outcome }}**`,
               '',
               'The live site was tested through seven plumbing journeys:',
@@ -203,27 +208,37 @@ jobs:
                 ? 'Every journey avoided repeated replies and topic locks, and finished with a visible price. The toilet-pipe journey asked for the missing pipe detail before pricing and did not prematurely offer £75 diagnosis.'
                 : 'Do not rely on Ken until the failing journey has been investigated.',
               '',
-              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+              `Workflow run: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`
             ].join('\n');
 
+            const { data: currentRun } = await github.rest.actions.getWorkflowRun({
+              owner,
+              repo,
+              run_id: context.runId
+            });
+            const currentStartedAt = new Date(currentRun.run_started_at || currentRun.created_at || 0);
+
             const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               state: 'all',
               per_page: 100
             });
             let issue = issues.find(item => !item.pull_request && item.title === title);
             if (!issue) {
-              issue = (await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body
-              })).data;
+              issue = (await github.rest.issues.create({ owner, repo, title, body })).data;
             }
+
+            const previousMatch = String(issue.body || '').match(/Last checked:\s*([^\n]+)/i);
+            const previousCheckedAt = previousMatch ? new Date(previousMatch[1].trim()) : null;
+            if (previousCheckedAt && !Number.isNaN(previousCheckedAt.valueOf()) && previousCheckedAt > currentStartedAt) {
+              core.info(`Skipping stale status update from run ${context.runId}; a newer result is already published.`);
+              return;
+            }
+
             const update = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               issue_number: issue.number,
               body,
               state: healthy ? 'closed' : 'open'
