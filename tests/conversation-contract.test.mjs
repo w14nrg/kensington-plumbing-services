@@ -49,7 +49,7 @@ test("250 different priced jobs always return a visible estimate and price text"
 test("120 false estimate-ready replies become a real £75 diagnosis option", () => {
   const claims = [
     "Your estimate is ready below.",
-    "I have built the current price range.",
+    "The price range is built and ready.",
     "Thanks — I’ve got enough plumbing information to build the current estimate.",
     "The current estimate is shown below."
   ];
