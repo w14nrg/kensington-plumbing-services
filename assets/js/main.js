@@ -1,4 +1,3 @@
-
 const menuBtn=document.querySelector('.menu-btn');
 const nav=document.querySelector('.desktop-nav');
 if(menuBtn&&nav){menuBtn.addEventListener('click',()=>{const open=nav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',open?'true':'false');menuBtn.textContent=open?'×':'☰';});}
@@ -28,3 +27,57 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-chat-decline]').forEach(b=>b.addEventListener('click',()=>{localStorage.setItem(KPS_CHAT_KEY,'decline');hideKpsChatChoice();}));
   document.querySelectorAll('[data-chat-settings]').forEach(b=>b.addEventListener('click',()=>{localStorage.removeItem(KPS_CHAT_KEY);showKpsChatChoice();}));
 });
+
+// Let a visitor clear Ken's current conversation and immediately begin a fresh one.
+(function addKenStartNewChat(){
+  if(document.getElementById('ken-page-app')) return;
+
+  const KEN_STORAGE_KEY='kps_ken_final_live_v10';
+  const RESTART_FLAG='kps_ken_restart_pending';
+  let reopened=false;
+
+  function mount(){
+    const head=document.querySelector('.ken-head');
+    if(!head) return false;
+
+    if(!head.querySelector('.ken-restart')){
+      const button=document.createElement('button');
+      button.className='ken-restart';
+      button.type='button';
+      button.textContent='Start new chat';
+      button.setAttribute('aria-label','Clear this chat and start a new one');
+      button.title='Clear this chat and start again';
+      button.style.cssText='border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:6px 8px;font:800 9px/1 Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap';
+      button.addEventListener('click',()=>{
+        try{sessionStorage.setItem(RESTART_FLAG,'1');}catch{}
+        try{localStorage.removeItem(KEN_STORAGE_KEY);}catch{}
+        window.location.reload();
+      });
+
+      const online=head.querySelector('.ken-online');
+      const close=head.querySelector('.ken-close');
+      head.insertBefore(button,online||close||null);
+    }
+
+    if(!reopened){
+      let shouldReopen=false;
+      try{
+        shouldReopen=sessionStorage.getItem(RESTART_FLAG)==='1';
+        if(shouldReopen) sessionStorage.removeItem(RESTART_FLAG);
+      }catch{}
+      if(shouldReopen){
+        reopened=true;
+        requestAnimationFrame(()=>document.querySelector('.ken-launcher')?.click());
+      }
+    }
+
+    return true;
+  }
+
+  if(!mount()){
+    const observer=new MutationObserver(()=>{
+      if(mount()) observer.disconnect();
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+  }
+})();
