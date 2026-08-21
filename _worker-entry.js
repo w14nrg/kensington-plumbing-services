@@ -156,7 +156,7 @@ async function handleGuardedKenRequest(request, env, context) {
   });
 }
 
-function healthResponse() {
+function healthResponse(env) {
   return new Response(JSON.stringify({
     ok: true,
     service: "ken-chat",
@@ -172,6 +172,7 @@ function healthResponse() {
     prematureDiagnosisRecovery: true,
     realUsersKeepAIRoute: true,
     smokeTestMode: true
+    paidBookingNotifications: Boolean(env.RESEND_API_KEY && env.OWNER_EMAIL),
   }), {
     status: 200,
     headers: {
@@ -190,7 +191,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "GET" && url.pathname === "/api/health") {
-      return healthResponse();
+      return healthResponse(env);
     }
 
     if (request.method === "POST" && url.pathname === "/api/ken") {
