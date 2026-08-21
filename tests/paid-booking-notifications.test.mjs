@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import worker from "../_worker.js";
+import entryWorker from "../_worker-entry.js";
 
 function makeDatabase(){
   let notificationStatus="NONE";
@@ -68,4 +69,11 @@ test("a missing email key never cancels an already paid booking",async()=>{
     assert.equal((await response.json()).paid,true);
     assert.equal(calls,0);
   }finally{globalThis.fetch=originalFetch;}
+});
+
+test("production health reports paid booking notification configuration",async()=>{
+  const response=await entryWorker.fetch(new Request("https://www.kensington.biz/api/health"),{RESEND_API_KEY:"re_test",OWNER_EMAIL:"nicholas.griffith.uk@gmail.com"},{});
+  assert.equal(response.status,200);
+  const health=await response.json();
+  assert.equal(health.paidBookingNotifications,true);
 });
