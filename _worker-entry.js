@@ -171,7 +171,7 @@ function healthResponse(env) {
     slotBasedQuestioning: true,
     prematureDiagnosisRecovery: true,
     realUsersKeepAIRoute: true,
-    smokeTestMode: true
+    smokeTestMode: true,
     paidBookingNotifications: Boolean(env.RESEND_API_KEY && env.OWNER_EMAIL),
   }), {
     status: 200,
