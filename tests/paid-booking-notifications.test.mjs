@@ -19,7 +19,10 @@ function makeDatabase(){
           if(sql.includes("FROM reservations WHERE id="))return {id:"res_test",...booking};
           return null;
         },
-        async all(){return {results:[]};},
+        async all(){
+          if(sql.includes("INNER JOIN payments"))return {results:[booking]};
+          return {results:[]};
+        },
         async run(){
           if(sql.includes("INSERT OR IGNORE INTO booking_notifications")&&notificationStatus==="NONE")notificationStatus="PENDING";
           if(sql.includes("SET status='SENDING'")){
@@ -76,4 +79,20 @@ test("production health reports paid booking notification configuration",async()
   assert.equal(response.status,200);
   const health=await response.json();
   assert.equal(health.paidBookingNotifications,true);
+});
+
+test("the recovery route sends an alert for an existing paid booking",async()=>{
+  const originalFetch=globalThis.fetch;
+  const emails=[];
+  globalThis.fetch=async(url,init)=>{emails.push(JSON.parse(init.body));return new Response(JSON.stringify({id:"email_recovery"}),{status:200,headers:{"content-type":"application/json"}});};
+  try{
+    const env={DB:makeDatabase(),RESEND_API_KEY:"re_test",OWNER_EMAIL:"nicholas.griffith.uk@gmail.com",NOTIFICATION_FROM_EMAIL:"Ken Alerts <onboarding@resend.dev>"};
+    const response=await worker.fetch(new Request("https://www.kensington.biz/api/retry-booking-notifications",{method:"POST"}),env);
+    assert.equal(response.status,200);
+    const result=await response.json();
+    assert.equal(result.confirmedPaidBookings,1);
+    assert.equal(result.notificationsSent,1);
+    assert.equal(emails.length,1);
+    assert.match(emails[0].subject,/PAID BOOKING/);
+  }finally{globalThis.fetch=originalFetch;}
 });

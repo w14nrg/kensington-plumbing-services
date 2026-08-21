@@ -999,6 +999,23 @@ async function handleSumUpWebhook(request,env){
   return new Response("",{status:204});
 }
 
+async function handleRetryBookingNotifications(request,env){
+  if(!env.DB)return json({error:"Booking database is not connected."},503);
+  if(!env.RESEND_API_KEY||!env.OWNER_EMAIL)return json({error:"Paid booking notifications are not configured."},503);
+  const result=await env.DB.prepare(`SELECT b.*
+    FROM bookings b
+    INNER JOIN payments p ON p.id=b.payment_id
+    WHERE b.status='CONFIRMED' AND UPPER(p.status)='PAID'
+    ORDER BY b.created_at DESC
+    LIMIT 50`).all();
+  const bookings=result.results||[];
+  let sent=0;
+  for(const booking of bookings){
+    if(await ensureBookingNotification(env,booking))sent+=1;
+  }
+  return json({ok:true,confirmedPaidBookings:bookings.length,notificationsSent:sent});
+}
+
 async function handlePaymentStatus(request,env){
   if(!env.DB)return json({error:"Booking database is not connected."},503);
   const url=new URL(request.url),ref=clean(url.searchParams.get("ref"),120);
@@ -1099,6 +1116,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/lead")return handleLead(request,env);
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="POST"&&url.pathname==="/api/sumup-webhook")return handleSumUpWebhook(request,env);
+      if(request.method==="POST"&&url.pathname==="/api/retry-booking-notifications")return handleRetryBookingNotifications(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
       if(url.pathname==="/api/health")return json({
