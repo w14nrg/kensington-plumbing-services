@@ -726,6 +726,127 @@ function timeLabel(t){
   const suffix=h>=12?"pm":"am",hour=((h+11)%12)+1;
   return `${hour}${m?":"+String(m).padStart(2,"0"):""}${suffix}`;
 }
+function escapeNotificationHtml(value){
+  return String(value??"")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function bookingDateLabel(value){
+  const parts=String(value||"").split("-").map(Number);
+  if(parts.length!==3||parts.some(x=>!Number.isFinite(x)))return String(value||"");
+  const dt=new Date(Date.UTC(parts[0],parts[1]-1,parts[2],12));
+  return new Intl.DateTimeFormat("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Europe/London"}).format(dt);
+}
+
+async function bookingNotificationDetails(env,bookingId){
+  return env.DB.prepare(`SELECT
+      b.id,b.appointment_date,b.start_time,b.end_time,b.status,
+      p.checkout_reference,p.status AS payment_status,
+      l.name AS customer_name,l.phone AS customer_phone,l.email AS customer_email,
+      l.address AS customer_address,l.postcode AS customer_postcode,
+      e.job_name,e.estimate_min,e.estimate_max
+    FROM bookings b
+    LEFT JOIN payments p ON p.id=b.payment_id
+    LEFT JOIN leads l ON l.id=COALESCE(b.lead_id,p.lead_id)
+    LEFT JOIN estimates e ON e.id=p.estimate_id
+    WHERE b.id=?`)
+    .bind(bookingId).first();
+}
+
+async function ensureBookingNotification(env,booking){
+  if(!booking?.id||!env?.DB)return false;
+  if(!env.RESEND_API_KEY||!env.OWNER_EMAIL){
+    console.error("Paid booking notification is not configured",{
+      bookingId:booking.id,
+      hasResendApiKey:Boolean(env.RESEND_API_KEY),
+      hasOwnerEmail:Boolean(env.OWNER_EMAIL)
+    });
+    return false;
+  }
+  let claimed=false;
+  try{
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS booking_notifications (
+      booking_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      attempts INTEGER NOT NULL DEFAULT 0,
+      provider_id TEXT,
+      last_error TEXT,
+      sent_at TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    await env.DB.prepare(`INSERT OR IGNORE INTO booking_notifications
+      (booking_id,status,attempts,updated_at) VALUES (?,'PENDING',0,CURRENT_TIMESTAMP)`)
+      .bind(booking.id).run();
+    const lock=await env.DB.prepare(`UPDATE booking_notifications
+      SET status='SENDING',attempts=attempts+1,last_error=NULL,updated_at=CURRENT_TIMESTAMP
+      WHERE booking_id=? AND (
+        status IN ('PENDING','FAILED') OR
+        (status='SENDING' AND updated_at < datetime('now','-5 minutes'))
+      )`).bind(booking.id).run();
+    claimed=Number(lock?.meta?.changes||0)>0;
+    if(!claimed)return false;
+    const details=await bookingNotificationDetails(env,booking.id)||booking;
+    const customer=details.customer_name||"Customer";
+    const date=bookingDateLabel(details.appointment_date);
+    const time=`${timeLabel(details.start_time)}–${timeLabel(details.end_time)}`;
+    const subject=`PAID BOOKING: ${date}, ${time} — ${customer}`;
+    const estimate=details.estimate_min!=null
+      ? `£${details.estimate_min}${details.estimate_max!=null&&details.estimate_max!==details.estimate_min?`–£${details.estimate_max}`:""}`
+      :"Not recorded";
+    const lines=[
+      "A paid £75 Kensington Plumbing Services appointment has been confirmed.","",
+      `Appointment: ${date}, ${time}`,
+      `Customer: ${customer}`,
+      `Telephone: ${details.customer_phone||"Not supplied"}`,
+      `Email: ${details.customer_email||"Not supplied"}`,
+      `Address: ${details.customer_address||"Not supplied"}`,
+      `Postcode: ${details.customer_postcode||"Not supplied"}`,
+      `Job: ${details.job_name||"Not recorded"}`,
+      `Online estimate: ${estimate}`,
+      `Payment reference: ${details.checkout_reference||"Not recorded"}`,
+      `Booking reference: ${details.id}`,"",
+      "The customer has been told that the appointment is booked."
+    ];
+    const htmlRows=[
+      ["Appointment",`${date}, ${time}`],["Customer",customer],
+      ["Telephone",details.customer_phone||"Not supplied"],
+      ["Email",details.customer_email||"Not supplied"],
+      ["Address",details.customer_address||"Not supplied"],
+      ["Postcode",details.customer_postcode||"Not supplied"],
+      ["Job",details.job_name||"Not recorded"],["Online estimate",estimate],
+      ["Payment reference",details.checkout_reference||"Not recorded"],
+      ["Booking reference",details.id]
+    ].map(([label,value])=>`<tr><th style="text-align:left;padding:9px 12px;border-bottom:1px solid #ddd;background:#f6f1e9">${escapeNotificationHtml(label)}</th><td style="padding:9px 12px;border-bottom:1px solid #ddd">${escapeNotificationHtml(value)}</td></tr>`).join("");
+    const response=await fetch("https://api.resend.com/emails",{
+      method:"POST",
+      headers:{"authorization":`Bearer ${env.RESEND_API_KEY}`,"content-type":"application/json"},
+      body:JSON.stringify({
+        from:env.NOTIFICATION_FROM_EMAIL||"Ken Alerts <onboarding@resend.dev>",
+        to:[env.OWNER_EMAIL],subject,text:lines.join("\n"),
+        html:`<!doctype html><html><body style="font-family:Arial,sans-serif;color:#102631"><div style="max-width:680px;margin:auto"><h1 style="color:#071f31">New paid booking</h1><p><strong>A £75 appointment has been paid and confirmed.</strong></p><table style="width:100%;border-collapse:collapse">${htmlRows}</table><p style="margin-top:20px;color:#a22"><strong>The customer has been told this appointment is booked.</strong></p></div></body></html>`
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(`Resend returned ${response.status}: ${JSON.stringify(result).slice(0,300)}`);
+    await env.DB.prepare(`UPDATE booking_notifications
+      SET status='SENT',provider_id=?,sent_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
+      WHERE booking_id=?`).bind(clean(result.id,160)||null,booking.id).run();
+    return true;
+  }catch(error){
+    console.error("Paid booking notification failed",booking.id,error);
+    if(claimed){
+      await env.DB.prepare(`UPDATE booking_notifications
+        SET status='FAILED',last_error=?,updated_at=CURRENT_TIMESTAMP
+        WHERE booking_id=?`).bind(clean(error?.message||String(error),500),booking.id).run().catch(()=>{});
+    }
+    return false;
+  }
+}
+
 function slotDefinition(date,start,end){
   const [y,m,d]=date.split("-").map(Number);
   const dt=new Date(Date.UTC(y,m-1,d,12));
@@ -779,20 +900,27 @@ async function handleReserveSlot(request,env){
 async function confirmReservation(env,payment){
   if(!env.DB||!payment.reservation_id)return null;
   const existing=await env.DB.prepare("SELECT * FROM bookings WHERE payment_id=?").bind(payment.id).first();
-  if(existing)return existing;
+  if(existing){
+    await ensureBookingNotification(env,existing);
+    return existing;
+  }
   const reservation=await env.DB.prepare("SELECT * FROM reservations WHERE id=?").bind(payment.reservation_id).first();
   if(!reservation)return null;
   const bookingId=uid("book");
+  let booking;
   try{
     await env.DB.prepare(`INSERT INTO bookings
       (id,payment_id,reservation_id,lead_id,slot_key,appointment_date,start_time,end_time,status)
       VALUES (?,?,?,?,?,?,?,?,?)`)
       .bind(bookingId,payment.id,reservation.id,payment.lead_id||reservation.lead_id||null,reservation.slot_key,reservation.appointment_date,reservation.start_time,reservation.end_time,"CONFIRMED").run();
+    booking=await env.DB.prepare("SELECT * FROM bookings WHERE id=?").bind(bookingId).first();
   }catch{
-    return await env.DB.prepare("SELECT * FROM bookings WHERE slot_key=?").bind(reservation.slot_key).first();
+    booking=await env.DB.prepare("SELECT * FROM bookings WHERE slot_key=?").bind(reservation.slot_key).first();
   }
+  if(!booking)return null;
   await env.DB.prepare("UPDATE reservations SET status='CONFIRMED' WHERE id=?").bind(reservation.id).run();
-  return await env.DB.prepare("SELECT * FROM bookings WHERE id=?").bind(bookingId).first();
+  await ensureBookingNotification(env,booking);
+  return booking;
 }
 
 async function handleCheckout(request,env){
