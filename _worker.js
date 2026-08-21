@@ -1016,6 +1016,51 @@ async function handleRetryBookingNotifications(request,env){
   return json({ok:true,confirmedPaidBookings:bookings.length,notificationsSent:sent});
 }
 
+async function handleOwnerNotificationTest(request,env){
+  if(!env.DB)return json({error:"Booking database is not connected."},503);
+  if(!env.RESEND_API_KEY||!env.OWNER_EMAIL)return json({error:"Paid booking notifications are not configured."},503);
+  const testId="paid-booking-email-live-v1";
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS system_notifications (
+    id TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    provider_id TEXT,
+    last_error TEXT,
+    sent_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  await env.DB.prepare(`INSERT OR IGNORE INTO system_notifications
+    (id,status,updated_at) VALUES (?,'PENDING',CURRENT_TIMESTAMP)`).bind(testId).run();
+  const claim=await env.DB.prepare(`UPDATE system_notifications
+    SET status='SENDING',last_error=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE id=? AND status IN ('PENDING','FAILED')`).bind(testId).run();
+  if(Number(claim?.meta?.changes||0)===0)return json({ok:true,alreadySent:true});
+  try{
+    const response=await fetch("https://api.resend.com/emails",{
+      method:"POST",
+      headers:{"authorization":`Bearer ${env.RESEND_API_KEY}`,"content-type":"application/json"},
+      body:JSON.stringify({
+        from:env.NOTIFICATION_FROM_EMAIL||"Ken Alerts <onboarding@resend.dev>",
+        to:[env.OWNER_EMAIL],
+        subject:"TEST: Kensington.biz paid booking alerts are working",
+        text:"This is a live delivery test from Kensington.biz. No customer booking was created and no customer information was used. Future confirmed paid bookings will be emailed to this address.",
+        html:"<!doctype html><html><body style=\"font-family:Arial,sans-serif;color:#102631\"><h1>Booking alerts are working</h1><p>This is a live delivery test from Kensington.biz.</p><p><strong>No customer booking was created and no customer information was used.</strong></p><p>Future confirmed paid bookings will be emailed to this address.</p></body></html>"
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(`Resend returned ${response.status}: ${JSON.stringify(result).slice(0,300)}`);
+    await env.DB.prepare(`UPDATE system_notifications
+      SET status='SENT',provider_id=?,sent_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
+      WHERE id=?`).bind(clean(result.id,160)||null,testId).run();
+    return json({ok:true,sent:true});
+  }catch(error){
+    await env.DB.prepare(`UPDATE system_notifications
+      SET status='FAILED',last_error=?,updated_at=CURRENT_TIMESTAMP
+      WHERE id=?`).bind(clean(error?.message||String(error),500),testId).run().catch(()=>{});
+    console.error("Owner notification live test failed",error);
+    return json({error:"The live booking email test failed."},502);
+  }
+}
+
 async function handlePaymentStatus(request,env){
   if(!env.DB)return json({error:"Booking database is not connected."},503);
   const url=new URL(request.url),ref=clean(url.searchParams.get("ref"),120);
@@ -1117,6 +1162,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="POST"&&url.pathname==="/api/sumup-webhook")return handleSumUpWebhook(request,env);
       if(request.method==="POST"&&url.pathname==="/api/retry-booking-notifications")return handleRetryBookingNotifications(request,env);
+      if(request.method==="POST"&&url.pathname==="/api/test-booking-notification")return handleOwnerNotificationTest(request,env);
       if(request.method==="GET"&&url.pathname==="/api/payment-status")return handlePaymentStatus(request,env);
       if(request.method==="POST"&&url.pathname==="/api/book")return handleBook(request,env);
       if(url.pathname==="/api/health")return json({
