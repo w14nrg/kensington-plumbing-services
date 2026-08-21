@@ -15,12 +15,17 @@ function makeDatabase(){
         async first(){
           if(sql.includes("FROM payments WHERE checkout_reference"))return payment;
           if(sql.includes("FROM bookings WHERE payment_id"))return booking;
-          if(sql.includes("FROM bookings b"))return {...booking,checkout_reference:"KPS-test",payment_status:"PAID",customer_name:"Test Customer",customer_phone:"07123456789",customer_email:"customer@example.com",customer_address:"1 Test Street",customer_postcode:"W14 9BP",job_name:"Repair dripping tap",estimate_min:95,estimate_max:190};
+          if(sql.includes("FROM bookings b"))return {...booking,checkout_reference:"KPS-test",payment_status:"PAID",customer_session_id:"session_test",customer_name:"Test Customer",customer_phone:"07123456789",customer_email:"customer@example.com",customer_address:"1 Test Street",customer_postcode:"W14 9BP",job_name:"Repair dripping tap",estimate_min:95,estimate_max:190};
           if(sql.includes("FROM reservations WHERE id="))return {id:"res_test",...booking};
           return null;
         },
         async all(){
           if(sql.includes("INNER JOIN payments"))return {results:[booking]};
+          if(sql.includes("FROM ken_messages"))return {results:[
+            {role:"user",content:"My kitchen tap is dripping constantly"},
+            {role:"assistant",content:"Is it dripping from the spout or leaking around the base?"},
+            {role:"user",content:"It is dripping from the spout"}
+          ]};
           return {results:[]};
         },
         async run(){
@@ -55,6 +60,9 @@ test("a confirmed paid booking emails Nicholas exactly once",async()=>{
     assert.match(emails[0].body.subject,/PAID BOOKING/);
     assert.match(emails[0].body.text,/Test Customer/);
     assert.match(emails[0].body.text,/07123456789/);
+    assert.match(emails[0].body.text,/Complete Ken chat transcript/);
+    assert.match(emails[0].body.text,/Customer: My kitchen tap is dripping constantly/);
+    assert.match(emails[0].body.text,/Ken: Is it dripping from the spout/);
     const second=await worker.fetch(request(),env);
     assert.equal(second.status,200);
     assert.equal(emails.length,1);
