@@ -1007,7 +1007,7 @@ async function handleRetryBookingNotifications(request,env){
     INNER JOIN payments p ON p.id=b.payment_id
     WHERE b.status='CONFIRMED' AND UPPER(p.status)='PAID'
     ORDER BY b.created_at DESC
-    LIMIT 50`).all();
+    LIMIT 1`).all();
   const bookings=result.results||[];
   let sent=0;
   for(const booking of bookings){
