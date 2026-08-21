@@ -24,7 +24,7 @@ function makeDatabase(){
           return {results:[]};
         },
         async run(){
-          if(sql.includes("INSERT OR IGNORE INTO booking_notifications")&&notificationStatus==="NONE")notificationStatus="PENDING";
+          if(sql.includes("INSERT OR IGNORE INTO")&&notificationStatus==="NONE")notificationStatus="PENDING";
           if(sql.includes("SET status='SENDING'")){
             if(notificationStatus==="PENDING"||notificationStatus==="FAILED"){notificationStatus="SENDING";return {meta:{changes:1}};}
             return {meta:{changes:0}};
@@ -94,5 +94,20 @@ test("the recovery route sends an alert for an existing paid booking",async()=>{
     assert.equal(result.notificationsSent,1);
     assert.equal(emails.length,1);
     assert.match(emails[0].subject,/PAID BOOKING/);
+  }finally{globalThis.fetch=originalFetch;}
+});
+
+test("the one-time live test contains no customer data",async()=>{
+  const originalFetch=globalThis.fetch;
+  const emails=[];
+  globalThis.fetch=async(url,init)=>{emails.push(JSON.parse(init.body));return new Response(JSON.stringify({id:"email_live_test"}),{status:200,headers:{"content-type":"application/json"}});};
+  try{
+    const env={DB:makeDatabase(),RESEND_API_KEY:"re_test",OWNER_EMAIL:"nicholas.griffith.uk@gmail.com",NOTIFICATION_FROM_EMAIL:"Ken Alerts <onboarding@resend.dev>"};
+    const response=await worker.fetch(new Request("https://www.kensington.biz/api/test-booking-notification",{method:"POST"}),env);
+    assert.equal(response.status,200);
+    assert.equal((await response.json()).sent,true);
+    assert.equal(emails.length,1);
+    assert.match(emails[0].subject,/TEST: Kensington\.biz/);
+    assert.doesNotMatch(emails[0].text,/Test Customer|07123456789|1 Test Street/);
   }finally{globalThis.fetch=originalFetch;}
 });
