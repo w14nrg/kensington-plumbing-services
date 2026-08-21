@@ -746,6 +746,7 @@ async function bookingNotificationDetails(env,bookingId){
   return env.DB.prepare(`SELECT
       b.id,b.appointment_date,b.start_time,b.end_time,b.status,
       p.checkout_reference,p.status AS payment_status,
+      l.session_id AS customer_session_id,
       l.name AS customer_name,l.phone AS customer_phone,l.email AS customer_email,
       l.address AS customer_address,l.postcode AS customer_postcode,
       e.job_name,e.estimate_min,e.estimate_max
@@ -790,6 +791,13 @@ async function ensureBookingNotification(env,booking){
     claimed=Number(lock?.meta?.changes||0)>0;
     if(!claimed)return false;
     const details=await bookingNotificationDetails(env,booking.id)||booking;
+    const chatResult=details.customer_session_id
+      ? await env.DB.prepare("SELECT role,content,created_at FROM ken_messages WHERE session_id=? ORDER BY created_at ASC").bind(details.customer_session_id).all()
+      : {results:[]};
+    const chatMessages=chatResult.results||[];
+    const transcriptLines=chatMessages.length
+      ? chatMessages.map(message=>`${String(message.role).toLowerCase()==="user"?"Customer":"Ken"}: ${message.content}`)
+      : ["No stored chat transcript was found for this booking."];
     const customer=details.customer_name||"Customer";
     const date=bookingDateLabel(details.appointment_date);
     const time=`${timeLabel(details.start_time)}–${timeLabel(details.end_time)}`;
@@ -809,6 +817,8 @@ async function ensureBookingNotification(env,booking){
       `Online estimate: ${estimate}`,
       `Payment reference: ${details.checkout_reference||"Not recorded"}`,
       `Booking reference: ${details.id}`,"",
+      "Complete Ken chat transcript:",
+      ...transcriptLines,"",
       "The customer has been told that the appointment is booked."
     ];
     const htmlRows=[
@@ -821,13 +831,14 @@ async function ensureBookingNotification(env,booking){
       ["Payment reference",details.checkout_reference||"Not recorded"],
       ["Booking reference",details.id]
     ].map(([label,value])=>`<tr><th style="text-align:left;padding:9px 12px;border-bottom:1px solid #ddd;background:#f6f1e9">${escapeNotificationHtml(label)}</th><td style="padding:9px 12px;border-bottom:1px solid #ddd">${escapeNotificationHtml(value)}</td></tr>`).join("");
+    const transcriptHtml=`<h2 style="margin-top:26px;color:#071f31">Complete Ken chat transcript</h2>${transcriptLines.map(line=>`<p style="padding:10px 12px;margin:6px 0;background:#f7f3ec;border-radius:8px">${escapeNotificationHtml(line)}</p>`).join("")}`;
     const response=await fetch("https://api.resend.com/emails",{
       method:"POST",
       headers:{"authorization":`Bearer ${env.RESEND_API_KEY}`,"content-type":"application/json"},
       body:JSON.stringify({
         from:env.NOTIFICATION_FROM_EMAIL||"Ken Alerts <onboarding@resend.dev>",
         to:[env.OWNER_EMAIL],subject,text:lines.join("\n"),
-        html:`<!doctype html><html><body style="font-family:Arial,sans-serif;color:#102631"><div style="max-width:680px;margin:auto"><h1 style="color:#071f31">New paid booking</h1><p><strong>A £75 appointment has been paid and confirmed.</strong></p><table style="width:100%;border-collapse:collapse">${htmlRows}</table><p style="margin-top:20px;color:#a22"><strong>The customer has been told this appointment is booked.</strong></p></div></body></html>`
+        html:`<!doctype html><html><body style="font-family:Arial,sans-serif;color:#102631"><div style="max-width:680px;margin:auto"><h1 style="color:#071f31">New paid booking</h1><p><strong>A £75 appointment has been paid and confirmed.</strong></p><table style="width:100%;border-collapse:collapse">${htmlRows}</table>${transcriptHtml}<p style="margin-top:20px;color:#a22"><strong>The customer has been told this appointment is booked.</strong></p></div></body></html>`
       })
     });
     const result=await response.json().catch(()=>({}));
