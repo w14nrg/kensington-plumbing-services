@@ -190,6 +190,13 @@ export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
 
+    // Keep one secure canonical hostname for customers, search engines and API clients.
+    if (url.hostname === "kensington.biz" || url.protocol === "http:") {
+      url.protocol = "https:";
+      if (url.hostname === "kensington.biz") url.hostname = "www.kensington.biz";
+      return Response.redirect(url.toString(), 308);
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       return healthResponse(env);
     }
