@@ -185,6 +185,29 @@ function healthResponse(env) {
   });
 }
 
+async function simplifyArrangedBookingPage(response, url) {
+  if (!(url.pathname === "/booking.html" || url.pathname === "/booking")) return response;
+  const type = response.headers.get("content-type") || "";
+  if (!type.toLowerCase().includes("text/html")) return response;
+
+  let html = await response.text();
+  html = html
+    .replace(/date and time/gi, "date")
+    .replace(/date\/time/gi, "date")
+    .replace(/<div class="field"><label for="agreedTime">Agreed arrival time<\/label><input id="agreedTime" type="time"><\/div>/i, "")
+    .replace("const ready=$('agreedDate').value&&$('agreedTime').value;", "const ready=$('agreedDate').value;")
+    .replace("payBtn.textContent=ready?'Pay £75 & confirm agreed appointment':'Enter the agreed date & time';", "payBtn.textContent=ready?'Pay £75 & confirm agreed appointment':'Enter the agreed date';")
+    .replace("$('agreedDate').addEventListener('change',updateButton);$('agreedTime').addEventListener('change',updateButton);", "$('agreedDate').addEventListener('change',updateButton);")
+    .replace("if(mode()==='arranged'&&(!$('agreedDate').value||!$('agreedTime').value)){status('Please enter the date and time already agreed with KPS.');return}", "if(mode()==='arranged'&&!$('agreedDate').value){status('Please enter the date already agreed with KPS.');return}")
+    .replace("const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value} at ${$('agreedTime').value}.`:'';", "const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value}.`:'';")
+    .replace("appointmentDate:$('agreedDate').value,agreedTime:$('agreedTime').value,bookingType:$('bookingType').value", "appointmentDate:$('agreedDate').value,agreedTime:'00:00',bookingType:$('bookingType').value");
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.set("cache-control", "no-store");
+  return new Response(html, {status: response.status, statusText: response.statusText, headers});
+}
+
 export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
@@ -213,7 +236,8 @@ export default {
       }
     }
 
-    const response = await coreWorker.fetch(request, env, context);
+    let response = await coreWorker.fetch(request, env, context);
+    if (request.method === "GET") response = await simplifyArrangedBookingPage(response, url);
     return addReleaseHeaders(response);
   }
 };
