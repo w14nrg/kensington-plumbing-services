@@ -10,6 +10,7 @@ import { applyContextEstimatePriority } from "./estimate-context-priority.js";
 import { applyUniversalConversationContract } from "./conversation-contract.js";
 import { applyConversationRoute, prepareConversationRoute } from "./conversation-routing-v2.js";
 import { applyPlumbingFlowEngine } from "./plumbing-flow-engine.js";
+import { handleManualReservation } from "./manual-booking.js";
 
 const RELEASE = "ken-chat-slot-routing-2026-08-02-v7";
 
@@ -134,8 +135,6 @@ async function handleGuardedKenRequest(request, env, context) {
   payload = repairFallbackCompletion(payload, repairInfo);
   payload = applyContextEstimatePriority(payload, repairInfo);
 
-  // Domain slot handling runs after compatibility repairs so it can remove a premature
-  // generic diagnosis and ask for the actual missing plumbing detail instead.
   payload = applyPlumbingFlowEngine(payload, routeInfo.body);
   payload = applyUniversalConversationContract(payload, routeInfo.body);
   payload = await persistCorrectedEstimate(payload, env);
@@ -190,7 +189,6 @@ export default {
   async fetch(request, env, context) {
     const url = new URL(request.url);
 
-    // Keep one secure canonical hostname for customers, search engines and API clients.
     if (url.hostname === "kensington.biz" || url.protocol === "http:") {
       url.protocol = "https:";
       if (url.hostname === "kensington.biz") url.hostname = "www.kensington.biz";
@@ -199,6 +197,10 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/health") {
       return healthResponse(env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/manual-reservation") {
+      return handleManualReservation(request, env);
     }
 
     if (request.method === "POST" && url.pathname === "/api/ken") {
