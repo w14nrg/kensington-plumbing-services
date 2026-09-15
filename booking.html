@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Book a Plumber Online | Kensington Plumbing Services</title>
-  <meta name="description" content="Book a Kensington Plumbing Services plumber online for £75 attendance and diagnosis. Choose an available appointment and pay securely with SumUp." />
+  <meta name="description" content="Book a Kensington Plumbing Services plumber online for £75 attendance and diagnosis. Choose an available appointment or pay for a visit already arranged by phone." />
   <link rel="canonical" href="https://www.kensington.biz/booking.html" />
   <style>
     :root{--navy:#102329;--green:#138a4b;--soft:#f5f8f8;--border:#d8e0e2;--text:#1e2c31}
@@ -13,17 +13,18 @@
     .hero{background:linear-gradient(135deg,#eef5f4,#fff);padding:48px 20px 38px;border-bottom:1px solid var(--border)}.wrap{max-width:920px;margin:auto}.eyebrow{display:inline-block;background:#e5f6eb;color:#0e6237;padding:7px 11px;border-radius:999px;font-weight:800;font-size:14px}.hero h1{font-size:clamp(36px,6vw,56px);line-height:1.05;color:var(--navy);margin:14px 0 12px}.hero p{font-size:19px;max-width:760px;margin:0}.saving{margin-top:17px;color:var(--green);font-size:18px;font-weight:800}
     main{background:var(--soft);padding:34px 20px 60px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}.step,.card{background:#fff;border:1px solid var(--border);border-radius:16px}.step{padding:18px}.step b{display:block;color:var(--navy);margin-bottom:4px}.card{padding:24px;box-shadow:0 10px 30px rgba(16,35,41,.05)}.card h2{color:var(--navy);margin:0 0 16px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}.field{display:flex;flex-direction:column;gap:6px}label{font-size:14px;font-weight:800}input,select,textarea{width:100%;padding:13px 14px;border:1px solid #bfcacc;border-radius:10px;background:#fff;font:inherit}textarea{min-height:95px;resize:vertical}
+    .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 18px}.choice{display:block;border:1px solid #bcc8cb;border-radius:13px;padding:16px;background:#fff;cursor:pointer}.choice input{width:auto;margin:0 8px 0 0}.choice strong{color:var(--navy)}.choice small{display:block;margin:6px 0 0 25px;color:#607077}.choice:has(input:checked){border:2px solid var(--green);background:#eff9f2}
     .btn{width:100%;border:0;border-radius:11px;padding:15px 18px;background:var(--navy);color:#fff;font-weight:800;font-size:17px;cursor:pointer}.btn:disabled{opacity:.55;cursor:not-allowed}.muted{font-size:14px;color:#64747a}.status{display:none;margin-top:14px;padding:12px 14px;border-radius:10px}.status.show{display:block}.status.error{display:block;background:#fff0f0;border:1px solid #efcaca;color:#842626}.status.ok{display:block;background:#edf9f1;border:1px solid #c7e8d2;color:#17633a}
     .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 18px}.slot{padding:14px 10px;border:1px solid #bcc8cb;background:#fff;border-radius:10px;cursor:pointer;text-align:left}.slot strong,.slot small{display:block}.slot strong{color:var(--navy);font-size:15px}.slot small{margin-top:3px;color:#52646a}.slot.active{border:2px solid var(--green);background:#eff9f2}.slot:disabled{opacity:.5;cursor:not-allowed}
-    .pricebox{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:12px;background:#f9fbfb}.pricebox del{color:#7a8588;margin-right:7px}.pricebox strong{font-size:28px;color:var(--green)}.notice{padding:13px 14px;border-radius:10px;background:#eef5f7;border:1px solid #d5e3e6;margin-bottom:16px}.secure{font-size:13px;color:#637277;text-align:center;margin-top:9px}footer{padding:28px 20px;text-align:center;color:#647277;font-size:14px}
-    @media(max-width:720px){.steps,.grid,.slots{grid-template-columns:1fr}.full{grid-column:auto}.top-inner{flex-direction:column;align-items:flex-start}.hero{padding-top:34px}.card{padding:18px}}
+    .pricebox{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:12px;background:#f9fbfb}.pricebox del{color:#7a8588;margin-right:7px}.pricebox strong{font-size:28px;color:var(--green)}.notice{padding:13px 14px;border-radius:10px;background:#eef5f7;border:1px solid #d5e3e6;margin-bottom:16px}.warning{padding:13px 14px;border-radius:10px;background:#fff8e8;border:1px solid #efd99e;margin:12px 0 16px}.secure{font-size:13px;color:#637277;text-align:center;margin-top:9px}footer{padding:28px 20px;text-align:center;color:#647277;font-size:14px}.hidden{display:none!important}
+    @media(max-width:720px){.steps,.grid,.slots,.choice-grid{grid-template-columns:1fr}.full{grid-column:auto}.top-inner{flex-direction:column;align-items:flex-start}.hero{padding-top:34px}.card{padding:18px}}
   </style>
 </head>
 <body>
 <header class="top"><div class="top-inner"><a class="brand" href="/">Kensington Plumbing Services</a><a class="tel" href="tel:+442073713333">020 7371 3333</a></div></header>
-<section class="hero"><div class="wrap"><span class="eyebrow">ONLINE BOOKING £75</span><h1>Book a plumber online</h1><p>Book directly without going through Ken. Enter your details, choose one of our live available 3-hour appointment windows, then pay securely through SumUp to confirm it.</p><div class="saving">Save £10 — standard call-out £85, online booking £75.</div></div></section>
+<section class="hero"><div class="wrap"><span class="eyebrow">ONLINE BOOKING £75</span><h1>Book a plumber online</h1><p>Book directly without going through Ken. Choose a normal available appointment, or use an appointment date and time already agreed with us by phone.</p><div class="saving">Save £10 — standard call-out £85, online booking £75.</div></div></section>
 <main><div class="wrap">
-  <div class="steps"><div class="step"><b>1. Enter your details</b>Tell us who and where we’re attending.</div><div class="step"><b>2. Pick a live slot</b>Choose from current available appointment windows.</div><div class="step"><b>3. Pay £75</b>Payment confirms the booking.</div></div>
+  <div class="steps"><div class="step"><b>1. Enter your details</b>Tell us who and where we’re attending.</div><div class="step"><b>2. Choose appointment</b>Pick a live slot or enter a visit already agreed by phone.</div><div class="step"><b>3. Pay £75</b>Payment confirms the booking.</div></div>
   <form id="bookingForm" class="card">
     <h2>Your plumbing job</h2>
     <div class="grid">
@@ -38,8 +39,27 @@
       <div class="field"><label for="postcode">Postcode</label><input id="postcode" required autocomplete="postal-code"></div>
       <div class="field"><label for="email">Email <span class="muted">(optional)</span></label><input id="email" type="email" autocomplete="email"></div>
     </div>
-    <h2 style="margin-top:28px">Available 3-hour appointments</h2>
-    <div id="slotMessage" class="muted">Loading live availability…</div><div id="slots" class="slots"></div>
+
+    <h2 style="margin-top:28px">When are we attending?</h2>
+    <div class="choice-grid">
+      <label class="choice"><input type="radio" name="appointmentMode" value="standard" checked><strong>Choose a normal online appointment</strong><small>Select one of the live 3-hour appointment windows below.</small></label>
+      <label class="choice"><input type="radio" name="appointmentMode" value="arranged"><strong>Already confirmed by phone / emergency / out of hours</strong><small>Use the date and time Kensington Plumbing Services has already agreed with you.</small></label>
+    </div>
+
+    <div id="standardAppointment">
+      <h2>Available 3-hour appointments</h2>
+      <div id="slotMessage" class="muted">Loading live availability…</div><div id="slots" class="slots"></div>
+    </div>
+
+    <div id="arrangedAppointment" class="hidden">
+      <div class="grid">
+        <div class="field"><label for="agreedDate">Agreed date</label><input id="agreedDate" type="date"></div>
+        <div class="field"><label for="agreedTime">Agreed arrival time</label><input id="agreedTime" type="time"></div>
+        <div class="field full"><label for="bookingType">What was agreed?</label><select id="bookingType"><option>Already arranged by phone</option><option>Emergency call-out</option><option>Out-of-hours visit</option><option>Other agreed appointment</option></select></div>
+      </div>
+      <div class="warning"><strong>Only use this option if you have already spoken to KPS and the date/time has been confirmed.</strong><br>If a different payment amount was agreed by phone, please call us rather than paying this £75 online booking fee.</div>
+    </div>
+
     <div class="pricebox"><div><b>Attendance & diagnosis</b><div class="muted"><del>£85</del> online booking price</div></div><strong>£75</strong></div>
     <div class="notice">The £75 covers attendance and diagnosis. Any repair work, additional labour or parts are agreed separately before proceeding.</div>
     <button id="payBtn" class="btn" type="submit" disabled>Choose an appointment first</button>
@@ -53,9 +73,20 @@
   const $=id=>document.getElementById(id),slotsEl=$('slots'),slotMessage=$('slotMessage'),payBtn=$('payBtn'),statusEl=$('status');
   const sessionId=`direct_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   let selectedSlot=null;
+  function mode(){return document.querySelector('input[name="appointmentMode"]:checked')?.value||'standard'}
   function status(msg,type='error'){statusEl.className=`status show ${type}`;statusEl.textContent=msg}
   function clearStatus(){statusEl.className='status';statusEl.textContent=''}
   async function api(url,options={}){const r=await fetch(url,{headers:{'content-type':'application/json',...(options.headers||{})},...options});const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||'Something went wrong.');e.data=d;throw e}return d}
+  function updateButton(){
+    if(mode()==='standard'){
+      payBtn.disabled=!selectedSlot?.slotKey;
+      payBtn.textContent=selectedSlot?.slotKey?'Pay £75 & confirm booking':'Choose an appointment first';
+    }else{
+      const ready=$('agreedDate').value&&$('agreedTime').value;
+      payBtn.disabled=!ready;
+      payBtn.textContent=ready?'Pay £75 & confirm agreed appointment':'Enter the agreed date & time';
+    }
+  }
   async function loadSlots(){
     try{
       const d=await api('/api/slots');
@@ -64,31 +95,48 @@
       slotMessage.textContent='Choose one of the live available appointment windows:';
       d.slots.slice(0,9).forEach(s=>{
         const b=document.createElement('button');b.type='button';b.className='slot';b.innerHTML=`<strong>${String(s.dayLabel||'Appointment')}</strong><small>${String(s.timeLabel||'')}</small>`;
-        b.addEventListener('click',()=>{document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSlot=s;payBtn.disabled=false;payBtn.textContent='Pay £75 & confirm booking';clearStatus()});
+        b.addEventListener('click',()=>{document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSlot=s;updateButton();clearStatus()});
         slotsEl.appendChild(b);
       });
     }catch(e){slotMessage.textContent='';status(e.message||'Could not load availability.')}
   }
+  document.querySelectorAll('input[name="appointmentMode"]').forEach(r=>r.addEventListener('change',()=>{
+    const arranged=mode()==='arranged';
+    $('standardAppointment').classList.toggle('hidden',arranged);
+    $('arrangedAppointment').classList.toggle('hidden',!arranged);
+    clearStatus();updateButton();
+  }));
+  $('agreedDate').addEventListener('change',updateButton);$('agreedTime').addEventListener('change',updateButton);
+  const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');$('agreedDate').min=`${yyyy}-${mm}-${dd}`;
   loadSlots();
+
   $('bookingForm').addEventListener('submit',async ev=>{
     ev.preventDefault();clearStatus();
-    if(!selectedSlot?.slotKey){status('Please choose an available appointment first.');return}
+    if(mode()==='standard'&&!selectedSlot?.slotKey){status('Please choose an available appointment first.');return}
+    if(mode()==='arranged'&&(!$('agreedDate').value||!$('agreedTime').value)){status('Please enter the date and time already agreed with KPS.');return}
     payBtn.disabled=true;payBtn.textContent='Preparing secure payment…';
     try{
+      const arranged=mode()==='arranged';
+      const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value} at ${$('agreedTime').value}.`:'';
       const lead=await api('/api/lead',{method:'POST',body:JSON.stringify({
         name:$('name').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),postcode:$('postcode').value.trim(),email:$('email').value.trim(),sessionId,
-        service:$('service').value,details:$('details').value.trim(),source:'direct-online-booking'
+        service:$('service').value,details:`${$('details').value.trim()}${arrangedText}`.trim(),source:arranged?'direct-arranged-booking':'direct-online-booking'
       })});
-      const held=await api('/api/reserve-slot',{method:'POST',body:JSON.stringify({slotKey:selectedSlot.slotKey,sessionId,leadId:lead.leadId})});
+      let held;
+      if(arranged){
+        held=await api('/api/manual-reservation',{method:'POST',body:JSON.stringify({sessionId,leadId:lead.leadId,appointmentDate:$('agreedDate').value,agreedTime:$('agreedTime').value,bookingType:$('bookingType').value})});
+      }else{
+        held=await api('/api/reserve-slot',{method:'POST',body:JSON.stringify({slotKey:selectedSlot.slotKey,sessionId,leadId:lead.leadId})});
+      }
       const reservationId=held.reservation?.reservationId;
-      if(!reservationId)throw new Error('We could not hold that appointment. Please choose another slot.');
+      if(!reservationId)throw new Error('We could not hold that appointment. Please try again or call 020 7371 3333.');
       const checkout=await api('/api/checkout',{method:'POST',body:JSON.stringify({leadId:lead.leadId,reservationId})});
       if(!checkout.checkoutUrl)throw new Error('The secure payment link could not be created. Please call 020 7371 3333.');
       window.location.href=checkout.checkoutUrl;
     }catch(e){
       status(e.message||'We could not complete the booking. Please try again or call 020 7371 3333.');
-      payBtn.disabled=false;payBtn.textContent='Pay £75 & confirm booking';
-      if(String(e.message||'').toLowerCase().includes('available'))loadSlots();
+      updateButton();
+      if(mode()==='standard'&&String(e.message||'').toLowerCase().includes('available'))loadSlots();
     }
   });
 })();
