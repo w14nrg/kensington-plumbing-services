@@ -17,6 +17,31 @@ const kenMobileClearance=document.createElement('style');
 kenMobileClearance.textContent='@media(max-width:650px){.ken-widget{bottom:64px!important}}';
 document.head.appendChild(kenMobileClearance);
 
+// Add a prominent direct online-booking CTA to the homepage without changing its SEO/content structure.
+(function addDirectBookingCta(){
+  const path=(location.pathname||'/').replace(/\/+$/,'')||'/';
+  if(path!=='/'&&path!=='/index.html') return;
+  const style=document.createElement('style');
+  style.textContent=`
+    .kps-book-online{background:#138a4b!important;color:#fff!important;border-color:#138a4b!important;font-weight:800!important;box-shadow:0 7px 18px rgba(19,138,75,.22)}
+    .kps-book-online:hover{filter:brightness(.96)}
+    .kps-save-note{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:7px 10px;border-radius:999px;background:#e7f7ed;color:#0e6338;font-weight:800;font-size:13px}
+  `;
+  document.head.appendChild(style);
+  const actions=document.querySelector('.hero-actions');
+  if(actions&&!actions.querySelector('.kps-book-online')){
+    const link=document.createElement('a');
+    link.className='btn kps-book-online';
+    link.href='booking.html';
+    link.textContent='Save £10 – Book Online';
+    actions.prepend(link);
+    const note=document.createElement('div');
+    note.className='kps-save-note';
+    note.textContent='£75 online · standard call-out £85';
+    actions.insertAdjacentElement('afterend',note);
+  }
+})();
+
 // Let a visitor clear Ken's current conversation and immediately begin a fresh one.
 (function addKenStartNewChat(){
   if(document.getElementById('ken-page-app')) return;
