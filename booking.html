@@ -1,4 +1,161 @@
 <!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book a Plumber Online | Kensington Plumbing Services</title>
+  <meta name="description" content="Book a Kensington Plumbing Services plumber online for £75 attendance and diagnosis. Choose an available appointment, pay securely with SumUp and receive confirmation." />
+  <link rel="canonical" href="https://www.kensington.biz/booking.html" />
+  <style>
+    :root{--navy:#071f31;--blue:#0f4c75;--light:#f5f8fa;--green:#138a4b;--text:#17232b;--border:#d9e1e6}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#fff;line-height:1.5}
+    a{color:inherit}.top{background:var(--navy);color:#fff;padding:14px 20px}.top-inner{max-width:1120px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-weight:800;font-size:20px;text-decoration:none}.tel{font-weight:700;text-decoration:none}
+    .hero{background:linear-gradient(135deg,#eef6fb,#fff);padding:48px 20px 34px;border-bottom:1px solid var(--border)}.wrap{max-width:980px;margin:auto}.eyebrow{display:inline-block;background:#dff4e7;color:#0e6339;padding:7px 11px;border-radius:999px;font-size:14px;font-weight:700}.hero h1{font-size:clamp(34px,6vw,54px);line-height:1.05;margin:16px 0 12px;color:var(--navy)}.hero p{font-size:19px;max-width:760px;margin:0}.saving{margin-top:18px;font-size:17px;font-weight:700;color:var(--green)}
+    main{padding:34px 20px 60px;background:var(--light)}.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(7,31,49,.06);margin-bottom:22px}.card h2{margin-top:0;color:var(--navy)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-weight:700;font-size:14px}input,select,textarea{width:100%;padding:13px 14px;border:1px solid #bfcbd2;border-radius:10px;font:inherit;background:#fff}textarea{min-height:100px;resize:vertical}
+    .slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.slot{padding:13px;border:1px solid #bfcbd2;background:#fff;border-radius:10px;font-weight:700;cursor:pointer}.slot.active{border-color:var(--navy);background:#eaf2f7}.slot:disabled{opacity:.45;cursor:not-allowed}
+    .btn{display:inline-flex;justify-content:center;align-items:center;width:100%;border:0;border-radius:12px;padding:15px 18px;background:var(--navy);color:#fff;font-size:17px;font-weight:800;cursor:pointer}.btn:disabled{opacity:.55;cursor:not-allowed}.muted{color:#60717c;font-size:14px}.notice{padding:13px 14px;border-radius:10px;background:#f0f6fa;border:1px solid #d7e7f0;margin-top:14px}.pricebox{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:16px;border-radius:12px;background:#f8fbfc;border:1px solid var(--border);margin:16px 0}.pricebox strong{font-size:26px;color:var(--navy)}
+    .status{display:none;margin-top:14px;padding:12px 14px;border-radius:10px}.status.show{display:block}.status.error{background:#fff1f1;color:#8a2323;border:1px solid #f0c5c5}.status.ok{background:#edf9f1;color:#17643a;border:1px solid #c8e9d3}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}.step b{display:block;color:var(--navy);margin-bottom:5px}
+    footer{padding:28px 20px;text-align:center;color:#5b6b75;font-size:14px}
+    @media(max-width:720px){.grid,.slots,.steps{grid-template-columns:1fr}.hero{padding-top:34px}.top-inner{align-items:flex-start;flex-direction:column}.card{padding:18px}}
+  </style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="/">Kensington Plumbing Services</a>
+    <a class="tel" href="tel:02073713333">020 7371 3333</a>
+  </div>
+</header>
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Online price £75</span>
+    <h1>Book a plumber online</h1>
+    <p>Choose an available appointment, enter your details and pay securely online. Your appointment is confirmed once the £75 payment is successful.</p>
+    <div class="saving">Save £10 compared with our £85 standard call-out booking.</div>
+  </div>
+</section>
+<main>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step"><b>1. Tell us the issue</b>Choose the closest plumbing problem.</div>
+      <div class="step"><b>2. Pick a time</b>Select an available appointment window.</div>
+      <div class="step"><b>3. Pay £75</b>Secure SumUp payment confirms the booking.</div>
+    </div>
 
-<html lang="en-GB"><head><meta charset="utf-8"/><meta content="noindex" name="robots"/><link href="https://www.kensington.biz/contact.html" rel="canonical"/><meta content="0; url=/contact.html" http-equiv="refresh"/><script>location.replace('/contact.html');</script><title>Redirecting…</title></head><body><p><a href="/contact.html">Continue</a></p>
-</body></html>
+    <form id="bookingForm" class="card" style="margin-top:22px">
+      <h2>Your plumbing job</h2>
+      <div class="grid">
+        <div class="field full">
+          <label for="service">What do you need help with?</label>
+          <select id="service" required>
+            <option value="">Choose one</option>
+            <option>Leak or dripping pipe</option>
+            <option>Toilet problem</option>
+            <option>Tap problem</option>
+            <option>Blocked sink or waste</option>
+            <option>Radiator or heating-side plumbing issue</option>
+            <option>Water pressure / no water</option>
+            <option>Shower or bath plumbing problem</option>
+            <option>Other plumbing issue</option>
+          </select>
+        </div>
+        <div class="field full"><label for="details">Brief description</label><textarea id="details" placeholder="Tell us what is happening, where it is, and anything useful we should know."></textarea></div>
+      </div>
+
+      <h2 style="margin-top:28px">Your details</h2>
+      <div class="grid">
+        <div class="field"><label for="name">Name</label><input id="name" required autocomplete="name"></div>
+        <div class="field"><label for="mobile">Mobile</label><input id="mobile" required inputmode="tel" autocomplete="tel"></div>
+        <div class="field full"><label for="address">Full address</label><input id="address" required autocomplete="street-address"></div>
+        <div class="field"><label for="postcode">Postcode</label><input id="postcode" required autocomplete="postal-code"></div>
+        <div class="field"><label for="email">Email <span class="muted">(optional)</span></label><input id="email" type="email" autocomplete="email"></div>
+      </div>
+
+      <h2 style="margin-top:28px">Choose your appointment</h2>
+      <div class="grid">
+        <div class="field"><label for="date">Date</label><input id="date" type="date" required></div>
+      </div>
+      <div id="slotMessage" class="muted" style="margin-top:10px">Choose a date to see available slots.</div>
+      <div id="slots" class="slots"></div>
+
+      <div class="pricebox"><div><b>Online booking</b><div class="muted">Attendance & diagnosis</div></div><strong>£75</strong></div>
+      <div class="notice">The £75 covers attendance and diagnosis. Any repair work or parts beyond that are agreed separately before work proceeds.</div>
+      <button id="payBtn" class="btn" type="submit" disabled>Pay £75 & confirm booking</button>
+      <div id="status" class="status"></div>
+    </form>
+  </div>
+</main>
+<footer>© Kensington Plumbing Services · <a href="/privacy.html">Privacy</a></footer>
+<script>
+(function(){
+  const $=id=>document.getElementById(id), date=$('date'), slots=$('slots'), slotMessage=$('slotMessage'), payBtn=$('payBtn'), status=$('status');
+  let selectedSlot=null, available=[];
+  const today=new Date();
+  const y=today.getFullYear(), m=String(today.getMonth()+1).padStart(2,'0'), d=String(today.getDate()).padStart(2,'0');
+  date.min=`${y}-${m}-${d}`;
+
+  function setStatus(msg,type){status.className=`status show ${type||''}`;status.textContent=msg}
+  function clearStatus(){status.className='status';status.textContent=''}
+  function endpoint(obj,names){for(const n of names){if(obj && obj[n]!=null)return obj[n]}return null}
+
+  async function loadSlots(){
+    clearStatus(); selectedSlot=null; payBtn.disabled=true; slots.innerHTML=''; available=[];
+    if(!date.value){slotMessage.textContent='Choose a date to see available slots.';return}
+    slotMessage.textContent='Checking availability…';
+    try{
+      const res=await fetch(`/api/slots?date=${encodeURIComponent(date.value)}`,{headers:{'accept':'application/json'}});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||'Could not load appointments.');
+      available=Array.isArray(data.slots)?data.slots:Array.isArray(data)?data:[];
+      if(!available.length){slotMessage.textContent='No online slots are available for this date. Please choose another date or call us.';return}
+      slotMessage.textContent='Select an available slot:';
+      available.forEach((item,idx)=>{
+        const start=endpoint(item,['start_time','startTime','start']); const end=endpoint(item,['end_time','endTime','end']);
+        const label=endpoint(item,['label','name']) || (start&&end?`${start}–${end}`:`Appointment ${idx+1}`);
+        const btn=document.createElement('button'); btn.type='button'; btn.className='slot'; btn.textContent=label;
+        btn.addEventListener('click',()=>{document.querySelectorAll('.slot').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selectedSlot=item;payBtn.disabled=false;});
+        slots.appendChild(btn);
+      });
+    }catch(err){slotMessage.textContent='';setStatus(err.message||'Could not load available appointments.','error')}
+  }
+  date.addEventListener('change',loadSlots);
+
+  $('bookingForm').addEventListener('submit',async e=>{
+    e.preventDefault(); clearStatus();
+    if(!selectedSlot){setStatus('Please select an available appointment.','error');return}
+    payBtn.disabled=true; payBtn.textContent='Preparing secure payment…';
+    try{
+      const slotKey=endpoint(selectedSlot,['slot_key','slotKey','id']);
+      const startTime=endpoint(selectedSlot,['start_time','startTime','start']);
+      const endTime=endpoint(selectedSlot,['end_time','endTime','end']);
+      const reservePayload={date:date.value,appointmentDate:date.value,slotKey,startTime,endTime};
+      const reserveRes=await fetch('/api/reserve-slot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(reservePayload)});
+      const reserve=await reserveRes.json();
+      if(!reserveRes.ok)throw new Error(reserve.error||'That appointment is no longer available. Please choose another slot.');
+      const reservationId=endpoint(reserve,['reservationId','reservation_id','id']);
+      if(!reservationId)throw new Error('We could not hold that appointment. Please try another slot.');
+
+      const leadPayload={
+        name:$('name').value.trim(), mobile:$('mobile').value.trim(), phone:$('mobile').value.trim(), email:$('email').value.trim(),
+        address:$('address').value.trim(), postcode:$('postcode').value.trim(), service:$('service').value,
+        message:`Standalone online booking: ${$('service').value}. ${$('details').value.trim()}`,
+        source:'standalone-booking', reservationId
+      };
+      const leadRes=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(leadPayload)});
+      const lead=await leadRes.json();
+      if(!leadRes.ok)throw new Error(lead.error||'We could not save your booking details.');
+      const leadId=endpoint(lead,['leadId','lead_id','id']);
+
+      const checkoutRes=await fetch('/api/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reservationId,leadId})});
+      const checkout=await checkoutRes.json();
+      if(!checkoutRes.ok)throw new Error(checkout.error||'We could not start the secure payment.');
+      const url=endpoint(checkout,['checkoutUrl','checkout_url','url']);
+      if(!url)throw new Error('Secure payment link was not returned. Please call 020 7371 3333.');
+      window.location.href=url;
+    }catch(err){setStatus(err.message||'Something went wrong. Please try again or call us.','error');payBtn.disabled=false;payBtn.textContent='Pay £75 & confirm booking';}
+  });
+})();
+</script>
+</body>
+</html>
