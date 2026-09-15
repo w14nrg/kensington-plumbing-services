@@ -1120,14 +1120,6 @@ function paymentReturnPage(ref){
   catch(e){title.textContent="We could not verify the payment";copy.textContent=e.message+" Please call 020 7371 3333."}})();</script></body></html>`;
 }
 
-function stripTawk(html){
-  // Ken replaces the previous Tawk widget.
-  return html
-    .replace(/<script[^>]+src=["'][^"']*tawk[^"']*["'][^>]*><\/script>/gi,"")
-    .replace(/<script[^>]*>[\s\S]*?embed\.tawk\.to[\s\S]*?<\/script>/gi,"")
-    .replace(/<[^>]+(?:id|class)=["'][^"']*(?:tawk|chat-consent|live-chat-consent)[^"']*["'][^>]*>[\s\S]*?<\/[^>]+>/gi,"");
-}
-
 async function serveAssetWithKen(request,env){
   const response=await env.ASSETS.fetch(request);
   const type=response.headers.get("content-type")||"";
@@ -1135,8 +1127,6 @@ async function serveAssetWithKen(request,env){
 
   const url=new URL(request.url);
   let html=await response.text();
-  html=stripTawk(html);
-
   // The dedicated Ken page already loads its own V9 CSS and JavaScript.
   // Never inject the older global Ken files on top of it, otherwise both
   // apps initialise the same #ken-page-app and the old fallback overwrites V9.

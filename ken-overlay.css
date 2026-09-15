@@ -125,9 +125,6 @@
 .ken-mini-actions{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;background:var(--ken-mist)}
 .ken-mini-action{border:1px solid #bdd0dc;background:#fff;color:var(--ken-navy);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:800;cursor:pointer}
 
-/* Remove common Tawk widget surfaces so Ken is the single chat experience. */
-iframe[src*="tawk.to"],iframe[src*="tawk"],.tawk-min-container,#tawkchat-container,.tawk-button-circle{display:none!important}
-
 @media(max-width:700px){
   #ken-home-entry{padding:22px 14px}
   .ken-home-inner{grid-template-columns:1fr 84px;gap:10px}

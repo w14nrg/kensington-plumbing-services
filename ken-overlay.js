@@ -278,13 +278,6 @@ function submitInput(){
 }
 
 function init(){
-  // Remove known Tawk runtime elements if they appear.
-  const killTawk=()=>{
-    document.querySelectorAll('iframe[src*="tawk.to"],iframe[src*="tawk"],.tawk-min-container,#tawkchat-container').forEach(el=>el.remove());
-  };
-  killTawk();
-  new MutationObserver(killTawk).observe(document.documentElement,{childList:true,subtree:true});
-
   injectHomeEntry();
 
   const host=document.createElement("div");

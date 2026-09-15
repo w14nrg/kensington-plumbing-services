@@ -6,12 +6,6 @@ document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().g
 const quoteForm=document.querySelector('#quote-form');
 if(quoteForm){quoteForm.addEventListener('submit',e=>{e.preventDefault();const d=new FormData(quoteForm);const parts=[`Hi Kensington Plumbing Services,`,`Name: ${d.get('name')||''}`,`Area/postcode: ${d.get('area')||''}`,`Job: ${d.get('service')||''}`,`Details: ${d.get('message')||''}`];window.open('https://wa.me/442073713333?text='+encodeURIComponent(parts.join('\n')),'_blank','noopener');});}
 
-// Tawk.to has been retired. Remove its old consent controls and stored preference.
-document.addEventListener('DOMContentLoaded',()=>{
-  try{localStorage.removeItem('kps_tawk_consent_v1');}catch{}
-  document.querySelectorAll('[data-chat-settings],[data-chat-consent]').forEach(el=>el.remove());
-});
-
 // Keep the Ken launcher above the fixed Call / WhatsApp bar on mobile.
 const kenMobileClearance=document.createElement('style');
 kenMobileClearance.textContent='@media(max-width:650px){.ken-widget{bottom:64px!important}}';
