@@ -198,7 +198,7 @@ async function simplifyArrangedBookingPage(response, url) {
     .replace("const ready=$('agreedDate').value&&$('agreedTime').value;", "const ready=$('agreedDate').value;")
     .replace("payBtn.textContent=ready?'Pay £75 & confirm agreed appointment':'Enter the agreed date & time';", "payBtn.textContent=ready?'Pay £75 & confirm agreed appointment':'Enter the agreed date';")
     .replace("$('agreedDate').addEventListener('change',updateButton);$('agreedTime').addEventListener('change',updateButton);", "$('agreedDate').addEventListener('change',updateButton);")
-    .replace("if(mode()==='arranged'&&(!$('agreedDate').value||!$('agreedTime').value)){status('Please enter the date and time already agreed with KPS.');return}", "if(mode()==='arranged'&&!$('agreedDate').value){status('Please enter the date already agreed with KPS.');return}")
+    .replace("if(mode()==='arranged'&&(!$('agreedDate').value||!$('agreedTime').value)){status('Please enter the date already agreed with KPS.');return}", "if(mode()==='arranged'&&!$('agreedDate').value){status('Please enter the date already agreed with KPS.');return}")
     .replace("const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value} at ${$('agreedTime').value}.`:'';", "const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value}.`:'';")
     .replace("appointmentDate:$('agreedDate').value,agreedTime:$('agreedTime').value,bookingType:$('bookingType').value", "appointmentDate:$('agreedDate').value,agreedTime:'00:00',bookingType:$('bookingType').value");
 
