@@ -908,6 +908,23 @@ async function handleReserveSlot(request,env){
   }
   return json({reservation:{reservationId,...slot,expiresAt}});
 }
+async function handleManualReservation(request,env){
+  if(!env.DB)return json({error:"Booking database is not connected yet."},503);
+  const data=await request.json().catch(()=>({}));
+  const appointmentDate=clean(data.appointmentDate,10);
+  const agreedTime=clean(data.agreedTime,5);
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(appointmentDate)||!/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(agreedTime)){
+    return json({error:"Please enter the date and time already agreed with KPS."},400);
+  }
+  const reservationId=uid("res");
+  const expiresAt=sqlTimestamp(new Date(Date.now()+35*60*1000));
+  const slotKey=`manual_${appointmentDate}_${agreedTime.replace(":","")}_${crypto.randomUUID().slice(0,8)}`;
+  await env.DB.prepare(`INSERT INTO reservations
+    (id,session_id,estimate_id,lead_id,slot_key,appointment_date,start_time,end_time,status,expires_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .bind(reservationId,clean(data.sessionId,100)||null,null,clean(data.leadId,100)||null,slotKey,appointmentDate,agreedTime,agreedTime,"HELD",expiresAt).run();
+  return json({reservation:{reservationId,slotKey,date:appointmentDate,start:agreedTime,end:agreedTime,expiresAt}});
+}
 async function confirmReservation(env,payment){
   if(!env.DB||!payment.reservation_id)return null;
   const existing=await env.DB.prepare("SELECT * FROM bookings WHERE payment_id=?").bind(payment.id).first();
@@ -1159,6 +1176,7 @@ export default{
       if(request.method==="POST"&&url.pathname==="/api/ken")return handleKen(request,env);
       if(request.method==="GET"&&url.pathname==="/api/slots")return handleSlots(request,env);
       if(request.method==="POST"&&url.pathname==="/api/reserve-slot")return handleReserveSlot(request,env);
+      if(request.method==="POST"&&url.pathname==="/api/manual-reservation")return handleManualReservation(request,env);
       if(request.method==="POST"&&url.pathname==="/api/lead")return handleLead(request,env);
       if(request.method==="POST"&&url.pathname==="/api/checkout")return handleCheckout(request,env);
       if(request.method==="POST"&&url.pathname==="/api/sumup-webhook")return handleSumUpWebhook(request,env);
