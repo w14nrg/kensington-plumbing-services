@@ -158,3 +158,5 @@
     max-width:96%;
   }
 }
+/* KPS Estimator: keep the corner label out of the flex row so the image stays centred */
+.ken-static-viewer .interactive-badge{position:absolute!important;left:16px;bottom:12px}
