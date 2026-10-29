@@ -16,6 +16,9 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
+  "services": [
+    { "binding": "LIVE_HUB", "service": "live-hub", "entrypoint": "KpsReporter" }
+  ],
   "d1_databases": [
     {
       "binding": "DB",

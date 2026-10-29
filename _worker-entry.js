@@ -14,6 +14,112 @@ import { handleManualReservation } from "./manual-booking.js";
 
 const RELEASE = "ken-chat-slot-routing-2026-08-02-v7";
 
+// ---- Live Hub reporting (owner's private visitor app) ----
+// Background only: never changes, delays or blocks any response. Uses the private Cloudflare
+// service binding LIVE_HUB (see wrangler.jsonc); does nothing if the binding isn't there.
+function liveHubEnabled(env) {
+  return Boolean(env && ((env.LIVE_HUB && typeof env.LIVE_HUB.report === "function") || (env.LIVE_HUB_URL && env.KPS_HUB_KEY)));
+}
+
+function liveHubPost(env, payload) {
+  if (env.LIVE_HUB && typeof env.LIVE_HUB.report === "function") {
+    let timer;
+    const timeout = new Promise((resolve) => { timer = setTimeout(resolve, 2500); });
+    return Promise.race([Promise.resolve().then(() => env.LIVE_HUB.report(payload)), timeout]).catch(() => {}).finally(() => clearTimeout(timer));
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+  return fetch(env.LIVE_HUB_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-hub-key": env.KPS_HUB_KEY },
+    body: JSON.stringify(payload),
+    signal: controller.signal
+  }).catch(() => {}).finally(() => clearTimeout(timer));
+}
+
+function liveHubLater(context, job) {
+  try {
+    if (context && typeof context.waitUntil === "function") context.waitUntil(Promise.resolve().then(job).catch(() => {}));
+  } catch {
+    // reporting must never affect the website
+  }
+}
+
+function liveHubClone(item) {
+  try { return item.clone(); } catch { return null; }
+}
+
+function liveHubPageView(request, response, env, context, url) {
+  try {
+    if (!liveHubEnabled(env) || request.method !== "GET" || response.status !== 200) return;
+    if (!(response.headers.get("content-type") || "").toLowerCase().includes("text/html")) return;
+    const cf = request.cf || {};
+    const payload = {
+      type: "pageview",
+      path: url.pathname,
+      search: url.search,
+      referrer: request.headers.get("referer") || "",
+      ua: request.headers.get("user-agent") || "",
+      ip: request.headers.get("cf-connecting-ip") || "",
+      geo: { city: cf.city || "", region: cf.region || "", country: cf.country || "" }
+    };
+    liveHubLater(context, () => liveHubPost(env, payload));
+  } catch {
+    // reporting must never affect the website
+  }
+}
+
+function liveHubChat(env, context, requestCopy, response) {
+  try {
+    if (!requestCopy || !response.ok) return;
+    const responseCopy = liveHubClone(response);
+    if (!responseCopy) return;
+    liveHubLater(context, async () => {
+      const sent = await requestCopy.json();
+      const reply = await responseCopy.json();
+      await liveHubPost(env, {
+        type: "chat",
+        sessionId: reply.sessionId || sent.sessionId || "",
+        message: sent.message || "",
+        reply: reply.reply || "",
+        page: sent.page || "",
+        estimate: reply.showEstimateNow ? reply.estimate : null,
+        postcode: reply.state?.postcode || ""
+      });
+    });
+  } catch {
+    // reporting must never affect the website
+  }
+}
+
+function liveHubLeadOrBooking(env, context, url, requestCopy, response) {
+  try {
+    if (!response.ok) return;
+    if (url.pathname === "/api/lead" && requestCopy) {
+      const responseCopy = liveHubClone(response);
+      if (!responseCopy) return;
+      liveHubLater(context, async () => {
+        const sent = await requestCopy.json();
+        const reply = await responseCopy.json();
+        if (!reply.leadId) return;
+        await liveHubPost(env, { type: "lead", leadId: reply.leadId, sessionId: sent.sessionId || "", name: sent.name || "", phone: sent.phone || "", postcode: sent.postcode || "" });
+      });
+    }
+    if (url.pathname === "/api/payment-status") {
+      const responseCopy = liveHubClone(response);
+      if (!responseCopy) return;
+      liveHubLater(context, async () => {
+        const reply = await responseCopy.json();
+        const b = reply.booking;
+        if (!reply.paid || !b || !b.id) return;
+        await liveHubPost(env, { type: "booking", bookingId: b.id, leadId: b.lead_id || "", appointment: `${b.appointment_date || ""} ${b.start_time || ""}–${b.end_time || ""}`.trim() });
+      });
+    }
+  } catch {
+    // reporting must never affect the website
+  }
+}
+
 function addReleaseHeaders(response, mode = "normal") {
   const headers = new Headers(response.headers);
   headers.set("x-ken-entry", RELEASE);
@@ -228,7 +334,10 @@ export default {
 
     if (request.method === "POST" && url.pathname === "/api/ken") {
       try {
-        return await handleGuardedKenRequest(request, env, context);
+        const liveHubCopy = liveHubEnabled(env) ? liveHubClone(request) : null;
+        const kenResponse = await handleGuardedKenRequest(request, env, context);
+        liveHubChat(env, context, liveHubCopy, kenResponse);
+        return kenResponse;
       } catch (error) {
         console.error("Ken slot routing error", error);
         const response = await coreWorker.fetch(request, env, context);
@@ -236,8 +345,14 @@ export default {
       }
     }
 
+    const liveHubLeadCopy = liveHubEnabled(env) && request.method === "POST" && url.pathname === "/api/lead" ? liveHubClone(request) : null;
     let response = await coreWorker.fetch(request, env, context);
     if (request.method === "GET") response = await simplifyArrangedBookingPage(response, url);
-    return addReleaseHeaders(response);
+    const finalResponse = addReleaseHeaders(response);
+    if (liveHubEnabled(env)) {
+      liveHubPageView(request, finalResponse, env, context, url);
+      liveHubLeadOrBooking(env, context, url, liveHubLeadCopy, finalResponse);
+    }
+    return finalResponse;
   }
 };
