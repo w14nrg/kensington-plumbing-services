@@ -11,6 +11,7 @@ import { applyUniversalConversationContract } from "./conversation-contract.js";
 import { applyConversationRoute, prepareConversationRoute } from "./conversation-routing-v2.js";
 import { applyPlumbingFlowEngine } from "./plumbing-flow-engine.js";
 import { handleManualReservation } from "./manual-booking.js";
+import { shouldReportLiveHubPageView } from "./livehub-traffic-filter.js";
 
 const RELEASE = "ken-chat-slot-routing-2026-08-02-v7";
 
@@ -52,6 +53,7 @@ function liveHubClone(item) {
 function liveHubPageView(request, response, env, context, url) {
   try {
     if (!liveHubEnabled(env) || request.method !== "GET" || response.status !== 200) return;
+    if (!shouldReportLiveHubPageView(request)) return;
     if (!(response.headers.get("content-type") || "").toLowerCase().includes("text/html")) return;
     const cf = request.cf || {};
     const payload = {
