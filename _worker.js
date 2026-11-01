@@ -1212,7 +1212,7 @@ async function handleBook(request,env){
 }
 
 function paymentReturnPage(ref){
-  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Booking confirmation | Kensington Plumbing Services</title>
   <style>body{margin:0;font-family:Inter,Arial,sans-serif;background:#f6f1e9;color:#102631}.wrap{max-width:760px;margin:60px auto;padding:20px}.card{background:#fff;border:1px solid #ded6cb;border-radius:24px;padding:32px;box-shadow:0 18px 55px rgba(7,31,49,.12)}h1{font-family:Georgia,serif;color:#071f31;font-size:40px}.badge{display:inline-block;background:#e6f5ee;color:#1d744f;padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px}.slot{margin:20px 0;background:#f7f3ec;border:1px solid #ead9c6;border-radius:15px;padding:16px;font-size:20px;font-weight:850;color:#071f31}a{color:#071f31;font-weight:800}</style></head>
   <body><main class="wrap"><div class="card"><span class="badge">Kensington Plumbing Services</span><h1 id="title">Checking your £75 payment…</h1><p id="copy">Please keep this page open for a moment.</p><div id="content"></div></div></main>
