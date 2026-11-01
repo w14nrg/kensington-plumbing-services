@@ -13,7 +13,7 @@ async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{"Con
 
 const widget=document.createElement("div");
 widget.className="ken-widget";
-widget.innerHTML=`<div class="ken-greeting"><strong>KPS Estimator</strong><span>Your plumbing assistant. Tell me what’s gone wrong, get a live estimate and book online. <b>Book online & save £10 on your first visit & diagnosis.</b></span><div class="ken-greeting-price"><del>£85</del><strong>£75</strong></div></div>
+widget.innerHTML=`<div class="ken-greeting"><button class="ken-greeting-close" type="button" aria-label="Close">×</button><strong>KPS Estimator</strong><span>Your plumbing assistant. Tell me what’s gone wrong, get a live estimate and book online. <b>Book online & save £10 on your first visit & diagnosis.</b></span><div class="ken-greeting-price"><del>£85</del><strong>£75</strong></div></div>
 <button class="ken-launcher" type="button" aria-label="Get an estimate">
 <img class="ken-launcher-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='335' viewBox='0 0 400 335'%3E %3Crect x='76' y='43' width='248' height='248' rx='34' fill='%23fffdf8' stroke='%23b8753e' stroke-width='10'/%3E %3Ctext x='200' y='196' text-anchor='middle' font-family='Georgia,serif' font-size='88' font-weight='700' letter-spacing='2' fill='%23b8753e'%3EKPS%3C/text%3E %3C/svg%3E" alt="KPS Estimator">
 <span class="ken-launcher-copy"><b>Get an estimate</b><small>Live estimate & booking</small></span><span class="ken-live-dot"></span></button>
@@ -24,6 +24,18 @@ widget.innerHTML=`<div class="ken-greeting"><strong>KPS Estimator</strong><span>
 <div class="ken-inputbar"><input maxlength="700" autocomplete="off" placeholder="Describe your plumbing problem…"><button class="ken-send" type="button">➜</button></div>
 <div class="ken-footnote">* Estimates are not fixed quotations. <button type="button" data-ken-disclaimer>How estimates work</button><span class="ken-foot-direct"> · <a href="tel:+442073713333">Call</a> · <a href="https://wa.me/442073713333?text=Hi%20Kensington%20Plumbing%20Services%2C%20I%20need%20help%20with%20a%20plumbing%20job.">WhatsApp</a></span></div></section>`;
 document.body.appendChild(widget);
+(function(){
+  // Greeting card: × closes it for the rest of the visit; on phones it also goes as soon as the visitor scrolls.
+  const greeting=widget.querySelector(".ken-greeting");if(!greeting)return;
+  const KEY="kps_greeting_closed";
+  const hide=remember=>{greeting.classList.add("hide");if(remember){try{sessionStorage.setItem(KEY,"1")}catch{}}};
+  try{if(sessionStorage.getItem(KEY)==="1")greeting.classList.add("hide")}catch{}
+  greeting.querySelector(".ken-greeting-close")?.addEventListener("click",ev=>{ev.stopPropagation();hide(true)});
+  const phone=window.matchMedia?window.matchMedia("(max-width:760px)"):{matches:false};
+  const startY=window.scrollY||0;
+  const onScroll=()=>{if(!phone.matches)return;if(Math.abs((window.scrollY||0)-startY)>30){hide(true);window.removeEventListener("scroll",onScroll)}};
+  window.addEventListener("scroll",onScroll,{passive:true});
+})();
 
 const disclaimer=document.createElement("div");disclaimer.className="ken-disclaimer-modal";disclaimer.hidden=true;
 disclaimer.innerHTML=`<div class="ken-disclaimer-card"><button class="ken-disclaimer-close" type="button">×</button><h3>About these estimates</h3>
