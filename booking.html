@@ -29,7 +29,7 @@
     <h2>Your plumbing job</h2>
     <div class="grid">
       <div class="field full"><label for="service">What do you need help with?</label><select id="service" required><option value="">Choose one</option><option>Leak or pipework problem</option><option>Toilet problem</option><option>Tap problem</option><option>Blocked sink or waste</option><option>Radiator or valve problem</option><option>Water pressure / no water</option><option>Shower or bath plumbing problem</option><option>Other plumbing issue</option></select></div>
-      <div class="field full"><label for="details">Brief description</label><textarea id="details" placeholder="Tell us briefly what is happening and where."></textarea></div>
+      <div class="field full"><label for="details">Brief description</label><textarea id="details" required placeholder="Tell us briefly what is happening and where, e.g. leaking pipe under the kitchen sink."></textarea></div>
     </div>
     <h2 style="margin-top:28px">Your details</h2>
     <div class="grid">
@@ -112,6 +112,9 @@
 
   $('bookingForm').addEventListener('submit',async ev=>{
     ev.preventDefault();clearStatus();
+    if(!$('service').value){status('Please choose what you need help with.');$('service').focus();return}
+    const desc=$('details').value.trim();
+    if((desc.match(/[A-Za-z]/g)||[]).length<10||desc.split(/\s+/).filter(w=>/[A-Za-z]{2,}/.test(w)).length<2){status('Please describe the problem in a few words, for example \u201cleaking pipe under the kitchen sink\u201d.');$('details').focus();return}
     if(mode()==='standard'&&!selectedSlot?.slotKey){status('Please choose an available appointment first.');return}
     if(mode()==='arranged'&&(!$('agreedDate').value||!$('agreedTime').value)){status('Please enter the date and time already agreed with KPS.');return}
     payBtn.disabled=true;payBtn.textContent='Preparing secure payment…';
@@ -120,7 +123,7 @@
       const arrangedText=arranged?` Appointment already agreed: ${$('bookingType').value}, ${$('agreedDate').value} at ${$('agreedTime').value}.`:'';
       const lead=await api('/api/lead',{method:'POST',body:JSON.stringify({
         name:$('name').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),postcode:$('postcode').value.trim(),email:$('email').value.trim(),sessionId,
-        service:$('service').value,details:`${$('details').value.trim()}${arrangedText}`.trim(),source:arranged?'direct-arranged-booking':'direct-online-booking'
+        service:$('service').value,details:$('details').value.trim(),arrangedNote:arrangedText.trim(),source:arranged?'direct-arranged-booking':'direct-online-booking'
       })});
       let held;
       if(arranged){

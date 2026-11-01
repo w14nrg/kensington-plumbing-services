@@ -705,15 +705,88 @@ async function handleKen(request,env){
   });
 }
 
+const DIRECT_JOB_TYPES=["Leak or pipework problem","Toilet problem","Tap problem","Blocked sink or waste","Radiator or valve problem","Water pressure / no water","Shower or bath plumbing problem","Other plumbing issue"];
+const leadJobColumnsReady=new WeakSet();
+async function ensureLeadJobColumns(env){
+  // Adds two optional columns to leads. Never deletes or rewrites anything.
+  // Any failure here is swallowed so bookings and payments always carry on.
+  if(!env?.DB)return false;
+  if(leadJobColumnsReady.has(env.DB))return true;
+  try{
+    const info=await env.DB.prepare("PRAGMA table_info(leads)").all();
+    const have=new Set((info?.results||[]).map(c=>String(c.name)));
+    for(const col of ["job_category","job_details"]){
+      if(have.has(col))continue;
+      try{await env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col} TEXT`).run();}
+      catch(error){if(!/duplicate column/i.test(String(error?.message||error)))throw error;}
+    }
+    leadJobColumnsReady.add(env.DB);
+    return true;
+  }catch(error){
+    console.error("Could not prepare lead job columns",error);
+    return false;
+  }
+}
+function meaningfulJobDescription(text){
+  const t=String(text||"").trim();
+  const letters=(t.match(/[A-Za-z]/g)||[]).length;
+  const words=t.split(/\s+/).filter(w=>/[A-Za-z]{2,}/.test(w)).length;
+  return letters>=10&&words>=2;
+}
+async function estimatorJobInfo(env,sessionId,estimateId){
+  // For bookings made through the estimator: reuse what the customer already told it.
+  const info={category:"",details:"",fromEstimator:false};
+  if(!env?.DB)return info;
+  try{
+    if(estimateId){
+      const est=await env.DB.prepare("SELECT job_name,issue_text FROM estimates WHERE id=?").bind(estimateId).first();
+      if(est){info.fromEstimator=true;info.category=clean(est.job_name,160);info.details=clean(est.issue_text,1500);}
+    }
+    if(sessionId){
+      const msgs=await env.DB.prepare("SELECT role,content FROM ken_messages WHERE session_id=? ORDER BY created_at ASC").bind(sessionId).all();
+      const said=(msgs?.results||[]).filter(m=>String(m.role).toLowerCase()==="user").map(m=>clean(m.content,500)).filter(Boolean);
+      if(said.length){info.fromEstimator=true;info.details=clean(said.join(" / "),1500);}
+    }
+  }catch(error){
+    console.error("Could not read estimator job info",error);
+  }
+  return info;
+}
+
 async function handleLead(request,env){
   const data=await request.json().catch(()=>({}));
   const name=clean(data.name,120),phone=clean(data.phone,60),email=clean(data.email,160);
   const address=clean(data.address,500),postcode=clean(data.postcode,20).toUpperCase();
   if(!name||!phone||!address||!postcode)return json({error:"Please enter your name, mobile number, full address and postcode."},400);
+  const sessionId=clean(data.sessionId,100)||null,estimateId=clean(data.estimateId,100)||null;
+  const service=clean(data.service,80),description=clean(data.details,1500),arrangedNote=clean(data.arrangedNote,300);
+  const estimator=await estimatorJobInfo(env,sessionId,estimateId);
+  let jobCategory="",jobDetails="";
+  // Anything that started in the estimator (session_… ids, or an estimate) is never blocked here.
+  const fromEstimator=estimator.fromEstimator||Boolean(estimateId)||/^session_/.test(String(sessionId||""));
+  if(fromEstimator&&!description){
+    jobCategory=estimator.category||"Online estimator";
+    jobDetails=estimator.details||"See the estimator chat transcript";
+  }else{
+    if(!DIRECT_JOB_TYPES.includes(service))return json({error:"Please choose what you need help with.",field:"service"},400);
+    if(!meaningfulJobDescription(description))return json({error:"Please describe the problem in a few words, for example \u201cleaking pipe under the kitchen sink\u201d.",field:"details"},400);
+    jobCategory=service;
+    jobDetails=arrangedNote?`${description}\n${arrangedNote}`:description;
+  }
   const leadId=uid("lead");
   if(env.DB){
-    await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode,address) VALUES (?,?,?,?,?,?,?,?)")
-      .bind(leadId,clean(data.sessionId,100)||null,clean(data.estimateId,100)||null,name,phone,email||null,postcode,address).run();
+    let saved=false;
+    if(await ensureLeadJobColumns(env)){
+      try{
+        await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode,address,job_category,job_details) VALUES (?,?,?,?,?,?,?,?,?,?)")
+          .bind(leadId,sessionId,estimateId,name,phone,email||null,postcode,address,jobCategory||null,jobDetails||null).run();
+        saved=true;
+      }catch(error){console.error("Lead insert with job details failed; saving without",error);}
+    }
+    if(!saved){
+      await env.DB.prepare("INSERT INTO leads (id,session_id,estimate_id,name,phone,email,postcode,address) VALUES (?,?,?,?,?,?,?,?)")
+        .bind(leadId,sessionId,estimateId,name,phone,email||null,postcode,address).run();
+    }
   }
   return json({leadId});
 }
@@ -743,12 +816,12 @@ function bookingDateLabel(value){
 }
 
 async function bookingNotificationDetails(env,bookingId){
-  return env.DB.prepare(`SELECT
+  const query=(jobCols)=>env.DB.prepare(`SELECT
       b.id,b.appointment_date,b.start_time,b.end_time,b.status,
       p.checkout_reference,p.status AS payment_status,
       l.session_id AS customer_session_id,
       l.name AS customer_name,l.phone AS customer_phone,l.email AS customer_email,
-      l.address AS customer_address,l.postcode AS customer_postcode,
+      l.address AS customer_address,l.postcode AS customer_postcode,${jobCols?"\n      l.job_category,l.job_details,":""}
       e.job_name,e.estimate_min,e.estimate_max
     FROM bookings b
     LEFT JOIN payments p ON p.id=b.payment_id
@@ -756,6 +829,10 @@ async function bookingNotificationDetails(env,bookingId){
     LEFT JOIN estimates e ON e.id=p.estimate_id
     WHERE b.id=?`)
     .bind(bookingId).first();
+  if(await ensureLeadJobColumns(env)){
+    try{return await query(true);}catch(error){console.error("Notification query with job details failed",error);}
+  }
+  return query(false);
 }
 
 async function ensureBookingNotification(env,booking){
@@ -801,7 +878,9 @@ async function ensureBookingNotification(env,booking){
     const customer=details.customer_name||"Customer";
     const date=bookingDateLabel(details.appointment_date);
     const time=`${timeLabel(details.start_time)}–${timeLabel(details.end_time)}`;
-    const subject=`PAID BOOKING: ${date}, ${time} — ${customer}`;
+    const jobCategory=details.job_category||details.job_name||"Not recorded";
+    const jobDescription=details.job_details||"Not recorded";
+    const subject=`PAID BOOKING: ${date}, ${time} — ${customer}${jobCategory!=="Not recorded"?` — ${jobCategory}`:""}`;
     const estimate=details.estimate_min!=null
       ? `£${details.estimate_min}${details.estimate_max!=null&&details.estimate_max!==details.estimate_min?`–£${details.estimate_max}`:""}`
       :"Not recorded";
@@ -813,7 +892,8 @@ async function ensureBookingNotification(env,booking){
       `Email: ${details.customer_email||"Not supplied"}`,
       `Address: ${details.customer_address||"Not supplied"}`,
       `Postcode: ${details.customer_postcode||"Not supplied"}`,
-      `Job: ${details.job_name||"Not recorded"}`,
+      `Job category: ${jobCategory}`,
+      `Job description: ${jobDescription}`,
       `Online estimate: ${estimate}`,
       `Payment reference: ${details.checkout_reference||"Not recorded"}`,
       `Booking reference: ${details.id}`,"",
@@ -827,7 +907,7 @@ async function ensureBookingNotification(env,booking){
       ["Email",details.customer_email||"Not supplied"],
       ["Address",details.customer_address||"Not supplied"],
       ["Postcode",details.customer_postcode||"Not supplied"],
-      ["Job",details.job_name||"Not recorded"],["Online estimate",estimate],
+      ["Job category",jobCategory],["Job description",jobDescription],["Online estimate",estimate],
       ["Payment reference",details.checkout_reference||"Not recorded"],
       ["Booking reference",details.id]
     ].map(([label,value])=>`<tr><th style="text-align:left;padding:9px 12px;border-bottom:1px solid #ddd;background:#f6f1e9">${escapeNotificationHtml(label)}</th><td style="padding:9px 12px;border-bottom:1px solid #ddd">${escapeNotificationHtml(value)}</td></tr>`).join("");
@@ -960,6 +1040,15 @@ async function handleCheckout(request,env){
   const reservationId=clean(data.reservationId,120);
   const reservation=await env.DB.prepare("SELECT * FROM reservations WHERE id=? AND status='HELD' AND expires_at > CURRENT_TIMESTAMP").bind(reservationId).first();
   if(!reservation)return json({error:"Your appointment hold has expired. Please choose another available slot."},409);
+  const checkoutLeadId=clean(data.leadId,100)||reservation.lead_id||null;
+  if(checkoutLeadId&&await ensureLeadJobColumns(env)){
+    try{
+      const lead=await env.DB.prepare("SELECT job_category,job_details,estimate_id,session_id FROM leads WHERE id=?").bind(checkoutLeadId).first();
+      if(lead&&!lead.job_category&&!lead.job_details&&!lead.estimate_id&&!clean(data.estimateId,100)&&!/^session_/.test(String(lead.session_id||""))){
+        return json({error:"Please go back and tell us what the plumbing problem is before paying."},400);
+      }
+    }catch(error){console.error("Checkout job check skipped",error);}
+  }
 
   const checkoutReference=`KPS-${Date.now()}-${crypto.randomUUID().slice(0,8)}`;
   const site=(env.SITE_URL||"https://www.kensington.biz").replace(/\/$/,"");
